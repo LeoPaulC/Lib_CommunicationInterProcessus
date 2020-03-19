@@ -2,7 +2,7 @@
 CC=gcc
 CFLAGS=-g -W -Wall -ansi -pedantic
 LDFLAGS=
-EXEC=mfile
+EXEC=mfile.out
 
 all: $(EXEC)
 
