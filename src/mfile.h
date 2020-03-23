@@ -33,7 +33,7 @@ typedef struct{
 
 void Init(void);
 mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t capacite );
-int write_addr(void *addr , char *val);
+int write_addr(void *addr , char *val , mfifo * fifo );
 
 
 #endif
