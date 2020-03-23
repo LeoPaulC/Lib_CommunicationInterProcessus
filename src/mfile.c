@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h> /* Pour les constantes « mode » */
 #include <fcntl.h> /* Pour les constantes O_* */ 
+#define LEN 512
 
 
 void Init(void)
@@ -75,6 +76,8 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				if ( fd != -1 ){
 					void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 					printf("Retour de mmap : %p\n", &addr );
+					printf("TEST ECRITURE --------------\n");
+					int rd = write_addr(&addr,"abcdefgh");
 	    			close(fd);
 	    			return fifo ;
 	    		}
@@ -186,4 +189,32 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 
 
 	return fifo ;
+}
+
+int write_addr(void *addr, char *val) {
+    int real_size = ((int*) addr)[0];
+    int last_idx = ((int*) addr)[1];
+    printf("> Data size: %d\n", real_size);
+    printf("> Index: %d\n", last_idx);
+
+    last_idx = last_idx+1;
+    char content[LEN];
+    memset (content, 0, LEN);
+    snprintf(content, LEN, "%d %s\n", last_idx, val);
+
+    printf("> Write content: %s", content);
+    printf("> Addr == %p\n", addr);
+
+    //memcpy((((char*)addr)+real_size),content, strlen(content));
+    ((int*) addr)[0] = real_size + strlen(content);
+    ((int*) addr)[1] = last_idx;
+
+    for ( int i = 0 ; i < strlen(val) ; i++ ){
+    	((char*) addr)[i+2] = val[i] ;
+    } 
+
+
+    printf("> Change size with %d and idx with %d\n", real_size, last_idx);
+
+    return 0;
 }
