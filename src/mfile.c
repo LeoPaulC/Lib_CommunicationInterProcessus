@@ -203,15 +203,23 @@ int write_addr(void *addr, char *val) {
     snprintf(content, LEN, "%d %s\n", last_idx, val);
 
     printf("> Write content: %s", content);
-    printf("> Addr == %p\n", addr);
+    /*printf("> Addr == %p\n", addr);*/
 
     //memcpy((((char*)addr)+real_size),content, strlen(content));
     ((int*) addr)[0] = real_size + strlen(content);
     ((int*) addr)[1] = last_idx;
-
+    printf("On va ecrire : %s a l'adresse %p \n",val , addr );
+    printf("\nEcriture...\n");
     for ( int i = 0 ; i < strlen(val) ; i++ ){
     	((char*) addr)[i+2] = val[i] ;
     } 
+    printf("\nEcriture terminée : \n");
+    printf("Lecture :\n> ");
+
+    for ( int i = 0 ; i < strlen(val) ; i++ ){
+    	printf("%c", ((char*) addr)[i+2]);
+    } 
+    printf("\nLecture terminée\n");
 
 
     printf("> Change size with %d and idx with %d\n", real_size, last_idx);
