@@ -29,15 +29,6 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 	}
 	*/
 
-	fifo->debut = (size_t)fifo ;
-	printf("Debut du pointeur fifo : %ld \n", fifo->debut );
-	/* capacity est definie par la capacité fournie en arg. */
-	fifo->capacity = (size_t)capacite ;
-	printf("Cap. fifo : %ld \n" , fifo->capacity);
-	/* fin correspond a debut+ cap. s*/
-	fifo->fin = fifo->debut+fifo->capacity ;
-	printf("Fin du pointeur fifo : %ld \n", fifo->fin );
-
 	/*
 		La valeur du paramètre options est ignorée pour le mfifo anonyme.
 		Pour un mfifo nommé, options peut prendre les valeurs suivantes :
@@ -49,17 +40,6 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 
 	*/
 
-	/*
-	int fd = shm_open("/liste", O_RDWR, 0);
-    struct stat buf_stat;
-    if (fstat(fd, &buf_stat) == -1) {
-        exit(1);
-    }
-
-    void *addr =
-        mmap(NULL, buf_stat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    close(fd);
-	*/
 	if ( nom != NULL ){
 		int fd ;
 		char * name = malloc(sizeof(char)*(sizeof(nom)+2));
@@ -75,10 +55,17 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				printf("Valeur du fd retour de shm_open() : %d \n", fd );
 				if ( fd != -1 ){
 					void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-					printf("Retour de mmap : %p\n", &addr );
-					printf("TEST ECRITURE --------------\n");
-					int rd = write_addr(&addr,"abcdefgh");
-	    			close(fd);
+					printf("Retour de mmap (pointeur): %p\n", &addr );
+					printf("Retour de mmap (long)	 : %ld\n", &addr );
+		    		close(fd);
+
+		    		printf("TEST ECRITURE --------------\n");
+					int rd = write_addr(&addr,"abcdefgh",fifo);
+
+		    		fifo->debut = &addr ;
+			    	fifo->fin = fifo->debut + capacite ;
+			    	fifo->capacity = capacite;
+
 	    			return fifo ;
 	    		}
 	    		else{
@@ -99,16 +86,27 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 					printf("Valeur du fd retour de shm_open() : %d , avec les permission suivantes : %d \n", fd , permission);
 					if ( fd != -1 ){
 						void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
-						printf("Retour de mmap : %p\n", &addr );
+						printf("Retour de mmap (pointeur): %p\n", &addr );
+						printf("Retour de mmap (long)	 : %ld\n", &addr );
 		    			close(fd);
+
+		    			fifo->debut = &addr ;
+			    		fifo->fin = fifo->debut + capacite ;
+			    		fifo->capacity = capacite;
+
 		    			return fifo ;
 		    		}
 		    		else{
 		    			fd = shm_open(name, O_RDWR, permission );
 		    			if ( fd != -1 ){
 							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
-							printf("Retour de mmap : %p\n", &addr );
+							printf("Retour de mmap (pointeur): %p\n", &addr );
+							printf("Retour de mmap (long)	 : %ld\n", &addr );
 			    			close(fd);
+
+			    			fifo->debut = &addr ;
+				    		fifo->fin = fifo->debut + capacite ;
+				    		fifo->capacity = capacite;
 			    			return fifo ;
 			    		}
 
@@ -139,8 +137,13 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 						}else{
 
 							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
-							printf("Retour de mmap : %p\n", &addr );
+							printf("Retour de mmap (pointeur): %p\n", &addr );
+							printf("Retour de mmap (long)	 : %ld\n", &addr );
 			    			close(fd);
+
+			    			fifo->debut = &addr ;
+				    		fifo->fin = fifo->debut + capacite ;
+				    		fifo->capacity = capacite;
 			    			return fifo ;
 						}
 					}
@@ -153,8 +156,13 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 						else{
 
 							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-							printf("Retour de mmap : %p\n", &addr );
+							printf("Retour de mmap (pointeur): %p\n", &addr );
+							printf("Retour de mmap (long)	 : %ld\n", &addr );
 			    			close(fd);
+
+			    			fifo->debut = &addr ;
+				    		fifo->fin = fifo->debut + capacite ;
+				    		fifo->capacity = capacite;
 			    			return fifo ;
 						}
 
@@ -191,7 +199,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 	return fifo ;
 }
 
-int write_addr(void *addr, char *val) {
+int write_addr(void *addr, char *val , mfifo * fifo ) {
     int real_size = ((int*) addr)[0];
     int last_idx = ((int*) addr)[1];
     printf("> Data size: %d\n", real_size);
@@ -200,7 +208,7 @@ int write_addr(void *addr, char *val) {
     last_idx = last_idx+1;
     char content[LEN];
     memset (content, 0, LEN);
-    snprintf(content, LEN, "%d %s\n", last_idx, val);
+    /*snprintf(content, LEN, "%d %s\n", last_idx, val);*/
 
     printf("> Write content: %s", content);
     /*printf("> Addr == %p\n", addr);*/
@@ -218,6 +226,8 @@ int write_addr(void *addr, char *val) {
 
     for ( int i = 0 ; i < strlen(val) ; i++ ){
     	printf("%c", ((char*) addr)[i+2]);
+    	fifo->memory[i] = ((char*) addr)[i+2] ;
+
     } 
     printf("\nLecture terminée\n");
 
