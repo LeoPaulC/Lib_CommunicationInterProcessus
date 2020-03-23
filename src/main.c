@@ -6,6 +6,7 @@
 int main(void)
 {
 	Init();
+	mfifo * a = mfifo_connect("test",0,O_CREAT,12);
 	return EXIT_SUCCESS;
 }
 					
