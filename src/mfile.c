@@ -236,3 +236,29 @@ int write_addr(void *addr, char *val , mfifo * fifo ) {
 
     return 0;
 }
+
+/**
+* Cette fonction déconnect, rend inutilisable, un objet mfifo, retourn -1 en cas d'erreur sinon 0
+*
+* @param fifo	objet mfifo à rendre ne plus utiliser
+*/
+int mfifo_disconnect(mfifo *fifo){
+	int r = munmap(fifo->debut,fifo->capacity);
+	if( r == -1){
+		perror("shm unlink");
+	}
+	return r;
+}
+
+/**
+* Cette fonction supprime un objet mfifo par son nom, retourn -1 en cas d'erreur sinon 0
+*
+* @param nom	nom de l'objet mfifo à supprimer
+*/
+int mfifo_unlink(const char*nom){
+	int r = shm_unlink(nom);
+	if( r == -1){
+		perror("shm unlink");
+	}
+	return r;
+}
