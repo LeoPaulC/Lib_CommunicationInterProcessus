@@ -58,11 +58,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
     void *addr =
         mmap(NULL, buf_stat.st_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     close(fd);
-
-
-
 	*/
-
 	if ( nom != NULL ){
 		int fd ;
 		char * name = malloc(sizeof(char)*(sizeof(nom)+2));
@@ -74,23 +70,53 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				strcat(name,"/") ;
 				strcat(name,nom);
 				printf("Connexion a un mfifo existant... Name : %s .\n",name);
-				fd = shm_open(name, O_RDWR, 0);
+				fd = shm_open(name, O_RDWR, permission);
 				printf("Valeur du fd retour de shm_open() : %d \n", fd );
+				if ( fd != -1 ){
+					void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+					printf("Retour de mmap : %p\n", &addr );
+	    			close(fd);
+	    			return fifo ;
+	    		}
+	    		else{
+	    			return NULL ;
+	    		}
 
 			break ;
+
+
 
 			case O_CREAT :
 				printf("Option : O_CREAT \n" );
 				strcat(name,"/") ;
 				strcat(name,nom);
 				printf("Creation d'un mfifo ... Name : %s .\n",name);
-				if ( permission != 0  )
+				if ( permission != 0  ){
 					fd = shm_open(name, O_CREAT, permission );// cree avec permission
-				else {
-					fd = shm_open(name, O_CREAT, 0 ); // cree sans permission
+					printf("Valeur du fd retour de shm_open() : %d , avec les permission suivantes : %d \n", fd , permission);
+					if ( fd != -1 ){
+						void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+						printf("Retour de mmap : %p\n", &addr );
+		    			close(fd);
+		    			return fifo ;
+		    		}
+		    		else{
+		    			fd = shm_open(name, O_RDWR, permission );
+		    			if ( fd != -1 ){
+							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+							printf("Retour de mmap : %p\n", &addr );
+			    			close(fd);
+			    			return fifo ;
+			    		}
+
+		    			printf("O_create , NULL\n");
+		    			return NULL ;
+		    		}
 				}
-				printf("Valeur du fd retour de shm_open() : %d , avec les permission suivantes : %d \n", fd , permission);
+								
 			break;
+
+
 
 			case O_CREAT|O_EXCL :
 				printf("Option : O_CREAT|O_EXCL \n" );
@@ -102,12 +128,36 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 					perror("mfifo_connect() echoue car l'objet existe deja .\n");
 				}
 				else{
-					if ( permission != 0 )
+					if ( permission != 0 ){
 						fd = shm_open(name, O_CREAT, permission );// cree avec permission
+						if ( fd == -1 ){
+							perror("mfifo_connect() echoue car creation echoue .\n");
+							exit(1);
+						}else{
+
+							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+							printf("Retour de mmap : %p\n", &addr );
+			    			close(fd);
+			    			return fifo ;
+						}
+					}
 					else {
 						fd = shm_open(name, O_CREAT, 0 ); // cree sans permission
+						if ( fd == -1 ){
+							perror("mfifo_connect() echoue car creation echoue .\n");
+							exit(1);
+						}
+						else{
+
+							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+							printf("Retour de mmap : %p\n", &addr );
+			    			close(fd);
+			    			return fifo ;
+						}
+
 					}
 				}
+				
 
 				printf("Valeur du fd retour de shm_open() : %d , avec les permission suivantes : %d \n", fd , permission);
 			break ;
