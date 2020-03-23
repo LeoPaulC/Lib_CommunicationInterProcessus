@@ -9,10 +9,10 @@ int main(void)
 {
 	Init();
 	printf("------Creation : -------\n");
-	mfifo * fifo = mfifo_connect("test",O_CREAT,0777,LEN);
+	mfifo * fifo = mfifo_connect("mfifoCo",O_CREAT,0777,LEN);
 
 	printf("\n\n-----Connexion : ----\n");
-	fifo = mfifo_connect("test",0,0777,LEN);
+	fifo = mfifo_connect("mfifoCo",0,0777,LEN);
 
 
 
