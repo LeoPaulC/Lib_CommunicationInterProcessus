@@ -14,39 +14,39 @@ void Init(void)
 }
 
 mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t capacite ){
+
 	if ( !capacite || capacite == 0 ){
 		perror("Capacité NULL ou = 0 , Erreur");
 		exit(1);
 	}
-
 	mfifo * fifo = malloc(sizeof(mfifo)) ;
 	/* debut fifo correspondant au retour de malloc */
-	if ( nom != NULL )
+	if ( nom != NULL ){
 		fifo->nom = nom ;
-	/*
-	else {
-		mfifo anonyme ;
 	}
-	*/
-
+	else {
+		/* mFifo anonyme */
+		void * addr = mmap(&fifo, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+		fifo->debut = &addr ;
+		fifo->fin = fifo->debut + capacite ;
+		fifo->capacity = capacite;
+		printf("Creation tube anonyme a l'adresse suivante : %p avec une capacite de : %d \n", &addr , capacite);
+	    return fifo ;
+	}
 	/*
 		La valeur du paramètre options est ignorée pour le mfifo anonyme.
 		Pour un mfifo nommé, options peut prendre les valeurs suivantes :
-
 			– 0 pour demander la connexion à un mfifo nommé existant,
 			– O_CREAT pour demander la création de mfifo s’il n’existe pas, puis la connexion,
 			– O_CREAT|O_EXCL pour indiquer qu’il faut créer un mfifo nommé seulement s’il
 				n’existe pas : si mfifo existe mfifo_connect doit échouer.
-
 	*/
 
 	if ( nom != NULL ){
 		int fd ;
 		char * name = malloc(sizeof(char)*(sizeof(nom)+2));
 		printf("Option : %d\n", options );
-
 		switch(options){
-
 			case 0 :
 				strcat(name,"/") ;
 				strcat(name,nom);
@@ -65,7 +65,6 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		    		fifo->debut = &addr ;
 			    	fifo->fin = fifo->debut + capacite ;
 			    	fifo->capacity = capacite;
-
 	    			return fifo ;
 	    		}
 	    		else{
@@ -176,13 +175,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		}
 
 	}
-		
-	/*
-	else {
-		mfifo anonyme ;
-	}
-	*/
-
+	// TODO : gerer les mfifo anonyme
 
 
 	/* 	Le paramètre permission est ignoré sauf à la création du shared memory object associé
