@@ -35,6 +35,10 @@ int main(void)
 	printf("\n\nCreation - connexion : \n");
 	mfifo * b = mfifo_connect("testBis",O_CREAT|O_EXCL,0777,LEN);
 
+	printf("\n\n-------------------------------------------\n");
+
+	printf("\n\nCreation Tube anonyme : \n");
+	mfifo * c = mfifo_connect(NULL,	O_CREAT|O_EXCL,0777,100);
 	
 
 
