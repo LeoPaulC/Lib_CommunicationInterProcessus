@@ -1,6 +1,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <semaphore.h>
+#include <errno.h>
 #include "mfile.h"
 #include <sys/mman.h>
 #include <sys/stat.h> /* Pour les constantes « mode » */
@@ -31,6 +33,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		fifo->fin = fifo->debut + capacite ;
 		fifo->capacity = capacite;
 		fifo->pid = -1 ;
+		sem_init(&fifo->sem,1,0);
 		printf("Creation tube anonyme a l'adresse suivante : %p avec une capacite de : %ld \n", &addr , capacite);
 	    return fifo ;
 	}
@@ -95,6 +98,10 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			    		fifo->fin = fifo->debut + capacite ;
 			    		fifo->capacity = capacite;
 			    		fifo->pid = -1 ;
+			    		sem_init(&fifo->sem,1,0);
+			    		/* 1 -> partagée entre != processus 
+			    		   0-> valeur initiale
+			    		   */
 		    			return fifo ;
 		    		}
 		    		else{
@@ -109,6 +116,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
+				    		sem_init(&fifo->sem,1,0);
 			    			return fifo ;
 			    		}
 
@@ -147,6 +155,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
+				    		sem_init(&fifo->sem,1,0);
 			    			return fifo ;
 						}
 					}
@@ -167,6 +176,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
+				    		sem_init(&fifo->sem,1,0);
 			    			return fifo ;
 						}
 
@@ -213,9 +223,13 @@ int write_addr(char *val , mfifo * fifo ) {
 * @param fifo	objet mfifo à rendre ne plus utiliser
 */
 int mfifo_disconnect(mfifo *fifo){
-	int r = munmap((void*)fifo->debut,fifo->capacity);
+	printf("dans disconnect \n");
+
+	printf("fifo debut : %ld \n", fifo->debut);
+	int r = munmap( (void *) fifo->debut, (fifo->capacity)-1);
 	if( r == -1){
-		perror("shm unlink");
+		printf("probleme retour %d \n", errno);
+		perror("shm unlink : ");
 	}
 	return r;
 }
@@ -225,7 +239,8 @@ int mfifo_disconnect(mfifo *fifo){
 *
 * @param nom	nom de l'objet mfifo à supprimer
 */
-int mfifo_unlink(const char*nom){
+int mfifo_unlink(const char * nom){
+	printf("dans unlink : nome := %s \n",nom );
 	int r = shm_unlink(nom);
 	if( r == -1){
 		perror("shm unlink");

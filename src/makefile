@@ -1,7 +1,7 @@
 
 CC=gcc
 CFLAGS=-g -W -Wall 
-LDFLAGS= -lrt
+LDFLAGS= -lrt -pthread
 EXEC=mfile.out
 
 all: $(EXEC)

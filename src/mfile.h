@@ -13,7 +13,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h> /* Pour les constantes « mode » */
 #include <fcntl.h> /* Pour les constantes O_* */ 
-
+#include <semaphore.h> 
 
 /* mfifo type : */
 
@@ -23,6 +23,7 @@ typedef struct{
 	size_t debut;
 	size_t fin;
 	pid_t pid;
+	sem_t sem;
 	/* semaphores , mutexes, conditions */
 	char memory[];
 } mfifo;

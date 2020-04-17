@@ -9,8 +9,8 @@ int main(void)
 {
 	Init();
 	printf("------ Creation PUIS Connexion : -------\n");
-	mfifo * fifo = mfifo_connect("mfifoCo",O_CREAT,0777,LEN);
-	fifo = mfifo_connect("mfifoCo",0,0777,LEN);
+	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
+	fifo = mfifo_connect("testBis",0,0777,LEN);
 
 	printf("Debut du pointeur fifo : %ld \n", fifo->debut );
 	printf("Cap. fifo : %ld \n" , fifo->capacity);
@@ -34,6 +34,26 @@ int main(void)
 	printf("Cap. fifo : %ld \n" , c->capacity);
 	printf("Fin du pointeur fifo : %ld \n", c->fin );
 	printf("Pid du fifo : %d \n", c->pid );
+
+
+	printf("---- Test de suppression de mfifo : %s ------ \n\n", fifo->nom);
+
+
+	printf("Etat avant suppression\n" );
+	//printf("Contenu du dossier /dev/shm/ : \n" );
+	//execlp("ls","ls","/dev/shm/",NULL);
+
+
+
+	printf("deconnexion de : %s\n",fifo->nom );
+	mfifo_disconnect(fifo);
+
+	printf("suppression de : %s\n",fifo->nom );
+	//mfifo_unlink(fifo->nom);
+
+	printf("Etat apres suppression\n" );
+	printf("Contenu du dossier /dev/shm/ : \n" );
+	execlp("ls","ls","/dev/shm/",NULL);
 
 
 	return EXIT_SUCCESS;
