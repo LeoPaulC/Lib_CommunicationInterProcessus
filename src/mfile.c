@@ -28,8 +28,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 	}
 	else {
 		/* mFifo anonyme */
-		void * addr = mmap(&fifo, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-		fifo->debut = (size_t)&addr ;
+		void * addr = mmap(NULL, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+		if (addr == MAP_FAILED){
+            perror("mmap");
+           	exit(1);
+        }
+		fifo->debut = (size_t)addr ;
 		fifo->fin = fifo->debut + capacite ;
 		fifo->capacity = capacite;
 		fifo->pid = -1 ;
@@ -58,15 +62,19 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				fd = shm_open(name, O_RDWR, permission);
 				//printf("Valeur du fd retour de shm_open() : %d \n", fd );
 				if ( fd != -1 ){
-					void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+					void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+					if (addr == MAP_FAILED){
+			            perror("mmap");
+			           	exit(1);
+			        }
 					//printf("Retour de mmap (pointeur): %p\n", &addr );
 					//printf("Retour de mmap (long)	 : %ld\n", &addr );
 		    		close(fd);
 
 		    		//printf("TEST ECRITURE --------------\n");
 					
-
-		    		fifo->debut = (size_t)&addr ;
+					fifo->debut = (size_t)addr ;
 			    	fifo->fin = fifo->debut + capacite ;
 			    	fifo->capacity = capacite;
 			    	fifo->pid = -1 ;
@@ -86,15 +94,22 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				strcat(name,nom);
 				//printf("Creation d'un mfifo ... Name : %s .\n",name);
 				if ( permission != 0  ){
-					fd = shm_open(name, O_CREAT, permission );// cree avec permission
+					fd = shm_open(name, O_CREAT | O_RDWR , permission );// cree avec permission
 					//printf("Valeur du fd retour de shm_open() : %d , avec les permission suivantes : %d \n", fd , permission);
 					if ( fd != -1 ){
-						void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+						void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 						//printf("Retour de mmap (pointeur): %p\n", &addr );
 						//printf("Retour de mmap (long)	 : %ld\n", &addr );
-		    			close(fd);
+						if (addr == MAP_FAILED){
+				            perror("O_creat , mmap");
+				           	exit(1);
+			        	}
 
-		    			fifo->debut = (size_t)&addr ;
+			        	//int r = munmap( addr , capacite );
+						//printf("Retour munmap : %d \n" , r );
+
+		    			close(fd);
+		    			fifo->debut = (size_t)addr ;
 			    		fifo->fin = fifo->debut + capacite ;
 			    		fifo->capacity = capacite;
 			    		fifo->pid = -1 ;
@@ -107,12 +122,16 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		    		else{
 		    			fd = shm_open(name, O_RDWR, permission );
 		    			if ( fd != -1 ){
-							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 							//printf("Retour de mmap (pointeur): %p\n", &addr );
 							//printf("Retour de mmap (long)	 : %ld\n", &addr );
+							if (addr == MAP_FAILED){
+					            perror("mmap");
+					           	exit(1);
+					        }
 			    			close(fd);
 
-			    			fifo->debut = (size_t)&addr ;
+			    			fifo->debut = (size_t)addr ;
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
@@ -146,12 +165,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 							exit(1);
 						}else{
 
-							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
 							//printf("Retour de mmap (pointeur): %p\n", &addr );
 							//printf("Retour de mmap (long)	 : %ld\n", &addr );
 			    			close(fd);
 
-			    			fifo->debut = (size_t)&addr ;
+			    			fifo->debut = (size_t)addr ;
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
@@ -167,12 +186,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 						}
 						else{
 
-							void *addr = mmap(&fifo, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 							//printf("Retour de mmap (pointeur): %p\n", &addr );
 							//printf("Retour de mmap (long)	 : %ld\n", &addr );
 			    			close(fd);
 
-			    			fifo->debut = (size_t)&addr ;
+			    			fifo->debut = (size_t)addr ;
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
@@ -225,12 +244,10 @@ int write_addr(char *val , mfifo * fifo ) {
 int mfifo_disconnect(mfifo *fifo){
 	printf("dans disconnect \n");
 
-	printf("fifo debut : %ld \n", fifo->debut);
-	int r = munmap( (void *) fifo->debut, (fifo->capacity)-1);
-	if( r == -1){
-		printf("probleme retour %d \n", errno);
-		perror("shm unlink : ");
-	}
+	printf("fifo debut : %ld \n", fifo->debut );
+	printf("Cap. fifo : %ld \n" , fifo->capacity);
+	int r = munmap( (void*)fifo->debut , fifo->capacity );
+	printf("Retour munmap : %d \n" , r );
 	return r;
 }
 
