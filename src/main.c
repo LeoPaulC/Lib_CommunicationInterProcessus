@@ -12,11 +12,10 @@ int main(void)
 	printf("------ Creation PUIS Connexion : -------\n");
 	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
 	fifo = mfifo_connect("testBis",0,0777,LEN);
+	int val;
+	sem_getvalue(&fifo->sem, &val);
 
-	printf("Debut du pointeur fifo : %ld \n", fifo->debut );
-	printf("Cap. fifo : %ld \n" , fifo->capacity);
-	printf("Fin du pointeur fifo : %ld \n", fifo->fin );
-	printf("Pid du fifo : %d \n", fifo->pid );
+	printf("valeur semaphore main: %d \n",val );
 
 	printf("\n------ Creation ET connexion : -------\n");
 	mfifo * b = mfifo_connect("testBis",O_CREAT|O_EXCL,0777,LEN);
@@ -27,12 +26,17 @@ int main(void)
 	printf("Pid du fifo : %d \n", b->pid );
 
 	printf("On tente une ecriture dans mfifo : \n");
+
+	sem_getvalue(&fifo->sem, &val);
+	printf("valeur semaphore main: %d \n",val );
 	
 	char* buf = "abcd" ;
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
+	sem_getvalue(&fifo->sem, &val);
+	printf("valeur semaphore main: %d \n",val );
 	printf("Res write : %d\n", res_write );	
 
-	char * buf_read =malloc(sizeof(char)*strlen(buf)) ;
+	char * buf_read = malloc(sizeof(char)*strlen(buf)) ;
 	size_t res_read = mfifo_read(fifo, buf_read, sizeof(buf_read));
 	printf("\nRes read : %d\n " , res_read);
 
@@ -53,7 +57,7 @@ int main(void)
 	//execlp("ls","ls","/dev/shm/",NULL);
 
 
-
+	destroy(fifo);
 	printf("deconnexion de : %s\n",fifo->nom );
 	mfifo_disconnect(fifo);
 

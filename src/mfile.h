@@ -48,6 +48,7 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len);
 
 int mfifo_lock(mfifo *fifo);
 int mfifo_unlock(mfifo *fifo);
+int destroy(mfifo * fifo);
 
 #endif
 					
