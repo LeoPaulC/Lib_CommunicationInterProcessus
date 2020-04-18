@@ -14,8 +14,12 @@ int main(void)
 	fifo = mfifo_connect("testBis",0,0777,LEN);
 	int val;
 	sem_getvalue(&fifo->sem, &val);
-
+	
 	printf("valeur semaphore main: %d \n",val );
+	printf("Debut du pointeur fifo : %ld \n", fifo->debut );
+	printf("Cap. fifo : %ld \n" , fifo->capacity);
+	printf("Fin du pointeur fifo : %ld \n", fifo->fin );
+	printf("Pid du fifo : %d \n", fifo->pid );
 
 	printf("\n------ Creation ET connexion : -------\n");
 	mfifo * b = mfifo_connect("testBis",O_CREAT|O_EXCL,0777,LEN);
@@ -26,10 +30,8 @@ int main(void)
 	printf("Pid du fifo : %d \n", b->pid );
 
 	printf("On tente une ecriture dans mfifo : \n");
-
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore main: %d \n",val );
-	
 	char* buf = "abcd" ;
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
 	sem_getvalue(&fifo->sem, &val);

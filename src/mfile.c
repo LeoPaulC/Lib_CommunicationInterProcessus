@@ -86,6 +86,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			    	fifo->fin = fifo->debut + capacite ;
 			    	fifo->capacity = capacite;
 			    	fifo->pid = -1 ;
+			    	if(sem_init(&fifo->sem,1,1) == -1 ){
+				    		perror("sem init 90 ");
+				    }
+				    int val;
+					sem_getvalue(&fifo->sem, &val);
+					printf("valeur semaphore 90: %d \n",val );
 	    			return fifo ;
 	    		}
 	    		else{
@@ -124,7 +130,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			    		/* 1 -> partagée entre != processus 
 			    		   0-> valeur initiale
 			    		   */
-			    		if(sem_init(&fifo->sem,1,2) == -1 ){
+			    		if(sem_init(&fifo->sem,1,1) == -1 ){
 				    		perror("sem init 125 ");
 				    	}
 				    	int val;
@@ -276,7 +282,7 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	int val;
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore : %d \n",val );
-	//mfifo_lock(fifo);
+	mfifo_lock(fifo);
 
 
 	int count = 0 ;
@@ -291,7 +297,7 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	}
 	printf("%s\n", (char*)buf);
 	//sleep(5);
-	//mfifo_unlock(fifo);
+	mfifo_unlock(fifo);
     return count;
 
 }
@@ -343,7 +349,7 @@ int destroy(mfifo * fifo){
 * @param fifo	objet mfifo à rendre ne plus utiliser
 */
 int mfifo_disconnect(mfifo *fifo){
-	if( munmap((void*)fifo->debut , fifo->capacity) ==-1){
+	if( munmap((void*)fifo->debut , fifo->capacity) == -1){
 		perror("munmap ");
 		return -1;
 	}
