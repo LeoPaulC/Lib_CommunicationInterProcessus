@@ -28,7 +28,10 @@ typedef struct{
 	char memory[];
 } mfifo;
 
-
+typedef struct{
+	size_t l;
+	char mes[];
+} message;
 
 /* Associated fonctions  */
 
@@ -42,6 +45,9 @@ int mfifo_trywrite(mfifo *fifo, const void *buf, size_t len);
 int mfifo_write_partial(mfifo *fifo, const void *buf, size_t len);
 
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len);
+
+int mfifo_lock(mfifo *fifo);
+int mfifo_unlock(mfifo *fifo);
 
 #endif
 					

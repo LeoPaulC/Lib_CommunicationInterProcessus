@@ -263,6 +263,21 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 }
 
 /**
+* Verrouille le mfifo pour la lecture
+*/
+int mfifo_lock(mfifo *fifo){
+
+	return -1;
+}
+
+/**
+* Déverrouille l’accès au mfifo en lecture
+*/
+int mfifo_unlock(mfifo *fifo){
+	return -1;
+}
+
+/**
 * Cette fonction déconnect, rend inutilisable, un objet mfifo, retourn -1 en cas d'erreur sinon 0
 *
 * @param fifo	objet mfifo à rendre ne plus utiliser
