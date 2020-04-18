@@ -14,10 +14,12 @@ int main(void)
 	fifo = mfifo_connect("testBis",0,0777,LEN);
 	int val;
 	sem_getvalue(&fifo->sem, &val);
-	
+
 	printf("valeur semaphore main: %d \n",val );
 	printf("Debut du pointeur fifo : %ld \n", fifo->debut );
 	printf("Cap. fifo : %ld \n" , fifo->capacity);
+	printf("capacity : %ld \n",mfifo_capacity(fifo) );
+	printf("free memory : %ld \n",mfifo_free_memory(fifo) );
 	printf("Fin du pointeur fifo : %ld \n", fifo->fin );
 	printf("Pid du fifo : %d \n", fifo->pid );
 
@@ -59,7 +61,6 @@ int main(void)
 	//execlp("ls","ls","/dev/shm/",NULL);
 
 
-	destroy(fifo);
 	printf("deconnexion de : %s\n",fifo->nom );
 	mfifo_disconnect(fifo);
 

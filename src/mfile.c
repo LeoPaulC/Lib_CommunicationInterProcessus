@@ -314,7 +314,6 @@ int mfifo_lock(mfifo *fifo){
 		perror("sem wait ");
 		return -1;
 	}
-	printf("fifo lock OKLM\n");
 	return 0;
 }
 
@@ -327,20 +326,36 @@ int mfifo_unlock(mfifo *fifo){
 		perror("sem post  ");
 		return -1;
 	}
-	printf("fifo unlocl OKLM\n");
 	return 0;
 }
 
 /*
-* Détruit un semaphore
+*	Renvoie la capacité totale de l'objet mfifo
 */
-int destroy(mfifo * fifo){
-	printf("\ndestroy\n\n");
+size_t mfifo_capacity(mfifo *fifo){
+	return fifo->capacity;
+}
+
+/*
+* Libere la mémoire allouer par l'objet fifo et ses diverses champs
+*
+* @param fifo ojbet mfifo dont l'on veut libérer la mémoire
+*/
+int free_mfifo(mfifo *fifo){
+	free((void *)fifo->nom);
 	if(sem_destroy(&fifo->sem) == -1){
 		perror("destroy semaphore ");
 		return -1;
 	}
-	return 0;
+	free(fifo);
+	return sizeof(fifo);
+}
+
+/*
+*	Renvoie la quantié de mémoire libre de l'objet mfifo
+*/
+size_t mfifo_free_memory(mfifo *fifo){
+	return (fifo->capacity - strlen(fifo->memory) );
 }
 
 /**
