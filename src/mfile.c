@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include <errno.h>
 #include "mfile.h"
+#include <errno.h>
 #include <sys/mman.h>
 #include <sys/stat.h> /* Pour les constantes « mode » */
 #include <fcntl.h> /* Pour les constantes O_* */ 
@@ -201,39 +202,64 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 
 					}
 				}
-				
-
-				//printf("Valeur du fd retour de shm_open() : %d , avec les permission suivantes : %d \n", fd , permission);
+			
 			break ;
 
 		}
 
 	}
-	// TODO : gerer les mfifo anonyme
-
-
-	/* 	Le paramètre permission est ignoré sauf à la création du shared memory object associé
-		à un mfifo nommé (ouvert en mode O_CREAT et indique alors les permissions d’accès
-		attribuées à cet objet (troisième paramètre de shm_open).
-		La fonction mfifo_connect() retourne un pointeur vers un objet mfifo qui sera utilisé
-		par d’autres opérations, voir section 4 pour la description du type mfifo.
-		En cas d’échec, mfifo_connect() retourne NULL.
-	*/
+	
 	return fifo ;
 }
 
-int write_addr(char *val , mfifo * fifo ) {
 
-    printf("> Content : %s\n", val);
+	/*
+	mfifo_write() bloque le processus appelant jusqu’à ce que len octets soient écrits dans
+	fifo. Les octets écrits ne doivent pas être mélangés avec les octets écrits par d’autres
+	processus, et le processus appelant reste donc bloqué tant qu’il n’y a pas de place pour
+	len octets dans fifo.
+	*/
+int mfifo_write(mfifo *fifo, const void *val, size_t len){
+	printf("Dans mfifo_write : \n");
+	printf("Len : %ld\n",len );
+	// On test que LEN est bien < fifo->capacite .
+	if ( len > fifo->capacity){
+		perror("Erreur , Len > fifo->capacite\n");
+		errno = EMSGSIZE;
+		return(-1);
+	}
+    printf("> Content : %s\n", (char*)val);
+    printf("> Ecriture : \n");
+    // on copie len octets dans fifo->memory
+    memcpy( fifo->memory, val , len );
+   	//printf("%s", fifo->memory);
     
-    printf(">> Ecriture / Lecture :\n");
-
-    for ( int i = 0 ; i < (int)strlen(val) ; i++ ){
-    	fifo->memory[i] = val[i] ;
-    	printf("%c", ((char*) fifo->memory)[i]);
-
-    } 
     return 0;
+}
+
+/*
+Supposons qu’un mfifo contient n octets et l = min(len, n). La fonction mfifo_read()
+copie l octets de mfifo à l’adresse buf. Les octets copiés sont supprimés du mfifo et
+mfifo_read retourne le nombre d’octets copiés.
+S’il y plusieurs processus lecteurs qui tentent de lire en même temps, tous sauf un seront
+bloqués en attendant la fin de la lecture du seul processus autorisé à lire. Chaque lecture
+lit donc un segment contigu d’octets stockés dans le mfifo.
+*/
+ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
+	int count = 0 ;
+	printf("Dans mfifo_read : \n");
+	printf("Len : %ld\n",len );
+	printf("Buf : %s\n> ",  (char*)buf );
+	
+	for ( int i = 0 ; i < (int)len ; i++ ){
+		memcpy( &buf[i], &fifo->memory[i] , 1 );
+	    memset(&fifo->memory[i],0,1);
+	    count++ ;
+	}
+	printf("%s", (char*)buf);
+
+    return count;
+
 }
 
 /**
@@ -243,7 +269,6 @@ int write_addr(char *val , mfifo * fifo ) {
 */
 int mfifo_disconnect(mfifo *fifo){
 	printf("dans disconnect \n");
-
 	printf("fifo debut : %ld \n", fifo->debut );
 	printf("Cap. fifo : %ld \n" , fifo->capacity);
 	int r = munmap( (void*)fifo->debut , fifo->capacity );

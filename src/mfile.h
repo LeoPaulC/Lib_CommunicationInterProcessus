@@ -34,9 +34,14 @@ typedef struct{
 
 void Init(void);
 mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t capacite );
-int write_addr(char *val , mfifo * fifo );
 int mfifo_disconnect(mfifo *fifo);
 int mfifo_unlink(const char*nom);
+
+int mfifo_write(mfifo *fifo, const void *buf, size_t len);
+int mfifo_trywrite(mfifo *fifo, const void *buf, size_t len);
+int mfifo_write_partial(mfifo *fifo, const void *buf, size_t len);
+
+ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len);
 
 #endif
 					
