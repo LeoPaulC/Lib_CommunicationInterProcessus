@@ -283,9 +283,7 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	mfifo_lock(fifo);
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore pendant le lock: %d \n",val );
-	mfifo_trylock(fifo);
-
-
+	
 	int count = 0 ;
 	printf("Dans mfifo_read : \n");
 	printf("Len : %ld\n",len );
