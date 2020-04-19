@@ -56,7 +56,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 
 			addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 			if (addr == MAP_FAILED){
-	            perror("mmap ");
+	            perror(" 0 , mmap ");
 	            return NULL;
 	        }
     		close(fd);
@@ -78,7 +78,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			}
 			addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 			if (addr == MAP_FAILED){
-	            perror("O_creat , mmap");
+	            perror("O_CREAT , mmap ");
 	           	return NULL;
         	}
 			close(fd);
@@ -98,7 +98,11 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				perror("mfifo_connect() echoue car creation echoue .\n");
 				return NULL;
 			}else{
-				addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+				addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+				if (addr == MAP_FAILED){
+	            	perror("O_CREAT | O_EXCL , mmap ");
+	           		return NULL;
+        		}
     			close(fd);
   				fill_mfifo(fifo,(size_t) addr, capacite);
     			return fifo ;
