@@ -62,10 +62,10 @@ int main(void)
 
 
 	printf("deconnexion de : %s\n",fifo->nom );
-	//mfifo_disconnect(fifo);
+	mfifo_disconnect(fifo);
 
 	printf("suppression de : %s\n",fifo->nom );
-	//mfifo_unlink(fifo->nom);
+	mfifo_unlink(fifo->nom);
 
 	printf("Etat apres suppression\n" );
 	printf("Contenu du dossier /dev/shm/ : \n" );

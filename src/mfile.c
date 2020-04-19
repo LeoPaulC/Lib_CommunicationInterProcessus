@@ -24,13 +24,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		perror("Capacité NULL ou = 0 , Erreur");
 		return NULL;
 	}
-	mfifo * fifo = malloc(sizeof(mfifo)) ;
+
 	/* debut fifo correspondant au retour de malloc */
-	if ( nom != NULL ){
-		fifo->nom = nom ;
-	}
-	else {
-		/* mFifo anonyme */
+	mfifo * fifo = malloc(sizeof(mfifo)) ;
+	
+	/* mFifo anonyme */
+	if( nom == NULL){
 		void * addr = mmap(NULL, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 		if (addr == MAP_FAILED){
             perror("mmap");
@@ -39,89 +38,71 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		fill_mfifo(fifo,(size_t) addr, capacite);
 	    return fifo ;
 	}
-	if ( nom != NULL ){
-		int fd ;
-		char * name = malloc(sizeof(char)*(sizeof(nom)+2));
-		strcat(name, "/");
-		strcat(name, nom);
-		switch(options){
-			case 0 :
-				fd = shm_open(name, O_RDWR, permission);
-				if( fd == -1 ){
-					perror("shm open ");
-					return NULL;
-				}
-				void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-				if (addr == MAP_FAILED){
-		            perror("mmap ");
-		            return NULL;
-		        }
-	    		close(fd);
-				fill_mfifo(fifo,(size_t) addr, capacite);
-    			return fifo ;
 
-			case O_CREAT :
-				if ( permission != 0  ){
-					fd = shm_open(name, O_CREAT | O_RDWR , permission );// cree avec permission
-					if ( fd != -1 ){
-						void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-						if (addr == MAP_FAILED){
-				            perror("O_creat , mmap");
-				           	return NULL;
-			        	}
-		    			close(fd);
-		    			fill_mfifo(fifo,(size_t) addr, capacite);
-		    			return fifo ;
-		    		}
-		    		else{
-		    			fd = shm_open(name, O_RDWR, permission );
-		    			if(fd == -1){
-		    				perror(" shm open ");
-		    				return NULL;
-		    			}
-						void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-						if (addr == MAP_FAILED){
-				            perror("mmap");
-				           	return NULL;
-				        }
-		    			close(fd);
-		    			fill_mfifo(fifo,(size_t) addr, capacite);
-		    		}
-				}				
+	fifo->nom = nom ;
+
+	int fd ;
+	char * name = malloc(sizeof(char)*(sizeof(nom)+2));
+	strcat(name, "/");
+	strcat(name, nom);
+	void * addr;
+	switch(options){
+		case 0 :
+			fd = shm_open(name, O_RDWR, permission);
+			if( fd == -1 ){
+				perror("shm open ");
+				return NULL;
+			}
+
+			addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+			if (addr == MAP_FAILED){
+	            perror("mmap ");
+	            return NULL;
+	        }
+    		close(fd);
+			fill_mfifo(fifo,(size_t) addr, capacite);
+			return fifo ;
+
+		case O_CREAT :
+			if( permission == 0){
+				return NULL;
+			}
+			fd = shm_open(name, O_CREAT | O_RDWR , permission );// cree avec permission
+			if( fd == -1){
+				/* si la création échoue alors on se connecte seulement*/
+				fd = shm_open(name, O_RDWR, permission);
+				if(fd == -1){
+    				perror(" shm open ");
+    				return NULL;
+    			}
+			}
+			addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+			if (addr == MAP_FAILED){
+	            perror("O_creat , mmap");
+	           	return NULL;
+        	}
+			close(fd);
+			fill_mfifo(fifo,(size_t) addr, capacite);
+			
+    		return fifo;
+
+		case O_CREAT|O_EXCL :
+			fd = shm_open(name, O_RDWR, 0);
+			if ( fd != -1 ){ // mfifo existe deja donc Connect() doit echouer
+				perror("mfifo_connect() echoue car l'objet existe deja .\n");
+				/*TODO: changer en return NULL et tester le retour dans le main*/
 				break;
-			case O_CREAT|O_EXCL :
-				fd = shm_open(name, O_RDWR, 0);
-				if ( fd != -1 ){ // mfifo existe deja donc Connect() doit echouer
-					perror("mfifo_connect() echoue car l'objet existe deja .\n");
-					break;
-				}
-				else{
-					if ( permission != 0 ){
-						fd = shm_open(name, O_CREAT, permission );// cree avec permission
-						if ( fd == -1 ){
-							perror("mfifo_connect() echoue car creation echoue .\n");
-							return NULL;
-						}else{
-							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
-			    			close(fd);
-			  				fill_mfifo(fifo,(size_t) addr, capacite);
-			    			return fifo ;
-						}
-					}
-					else {
-						fd = shm_open(name, O_CREAT, 0 ); // cree sans permission
-						if ( fd == -1 ){
-							perror("mfifo_connect() echoue car creation echoue .\n");
-							return NULL;
-						}else{
-							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-			    			close(fd);
-			    			fill_mfifo(fifo,(size_t) addr, capacite);
-			    			return fifo ;
-						}
-					}
-				}
-		}
+			}
+			fd = shm_open(name, O_CREAT, permission );// cree avec permission
+			if ( fd == -1 ){
+				perror("mfifo_connect() echoue car creation echoue .\n");
+				return NULL;
+			}else{
+				addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
+    			close(fd);
+  				fill_mfifo(fifo,(size_t) addr, capacite);
+    			return fifo ;
+			}
 	}
 	return fifo ;
 }
