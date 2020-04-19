@@ -52,7 +52,14 @@ int mfifo_trylock(mfifo *fifo);
 
 size_t mfifo_capacity(mfifo *fifo);
 size_t mfifo_free_memory(mfifo *fifo);
+
+
+
+
+void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite);
 int free_mfifo(mfifo *fifo);
+
+
 
 #endif
 					
