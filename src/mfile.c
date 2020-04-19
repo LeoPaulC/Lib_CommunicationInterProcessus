@@ -6,6 +6,8 @@
 #include "mfile.h"
 #include <errno.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <sys/stat.h> /* Pour les constantes « mode » */
 #include <fcntl.h> /* Pour les constantes O_* */ 
 #define LEN 512
@@ -38,7 +40,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		fifo->fin = fifo->debut + capacite ;
 		fifo->capacity = capacite;
 		fifo->pid = -1 ;
-		sem_init(&fifo->sem,1,0);
+		if(sem_init(&fifo->sem,1,1) == -1){
+			perror(" sem init 44  ");
+		}
+		int val;
+		sem_getvalue(&fifo->sem, &val);
+		printf("valeur semaphore 44: %d \n",val );
 		printf("Creation tube anonyme a l'adresse suivante : %p avec une capacite de : %ld \n", &addr , capacite);
 	    return fifo ;
 	}
@@ -79,6 +86,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			    	fifo->fin = fifo->debut + capacite ;
 			    	fifo->capacity = capacite;
 			    	fifo->pid = -1 ;
+			    	if(sem_init(&fifo->sem,1,1) == -1 ){
+				    		perror("sem init 90 ");
+				    }
+				    int val;
+					sem_getvalue(&fifo->sem, &val);
+					printf("valeur semaphore 90: %d \n",val );
 	    			return fifo ;
 	    		}
 	    		else{
@@ -114,10 +127,15 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			    		fifo->fin = fifo->debut + capacite ;
 			    		fifo->capacity = capacite;
 			    		fifo->pid = -1 ;
-			    		sem_init(&fifo->sem,1,0);
 			    		/* 1 -> partagée entre != processus 
 			    		   0-> valeur initiale
 			    		   */
+			    		if(sem_init(&fifo->sem,1,1) == -1 ){
+				    		perror("sem init 125 ");
+				    	}
+				    	int val;
+						sem_getvalue(&fifo->sem, &val);
+						printf("valeur semaphore 125: %d \n",val );
 		    			return fifo ;
 		    		}
 		    		else{
@@ -136,7 +154,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
-				    		sem_init(&fifo->sem,1,0);
+				    		if(sem_init(&fifo->sem,1,1) == -1 ){
+				    			perror("sem init 146 ");
+				    		}
+				    		int val;
+							sem_getvalue(&fifo->sem, &val);
+							printf("valeur semaphore 146: %d \n",val );
 			    			return fifo ;
 			    		}
 
@@ -175,7 +198,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
-				    		sem_init(&fifo->sem,1,0);
+				    		if(sem_init(&fifo->sem,1,1) == -1 ){
+				    			perror("sem init 187 ");
+				    		}
+				    		int val;
+							sem_getvalue(&fifo->sem, &val);
+							printf("valeur semaphore 187: %d \n",val );
 			    			return fifo ;
 						}
 					}
@@ -196,7 +224,12 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				    		fifo->fin = fifo->debut + capacite ;
 				    		fifo->capacity = capacite;
 				    		fifo->pid = -1 ;
-				    		sem_init(&fifo->sem,1,0);
+				    		if(sem_init(&fifo->sem,1,1) == -1 ){
+				    			perror("sem init 210 ");
+				    		}
+				    		int val;
+							sem_getvalue(&fifo->sem, &val);
+							printf("valeur semaphore 210: %d \n",val );
 			    			return fifo ;
 						}
 
@@ -246,6 +279,11 @@ bloqués en attendant la fin de la lecture du seul processus autorisé à lire. 
 lit donc un segment contigu d’octets stockés dans le mfifo.
 */
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
+	int val;
+	mfifo_lock(fifo);
+	sem_getvalue(&fifo->sem, &val);
+	printf("valeur semaphore pendant le lock: %d \n",val );
+	
 	int count = 0 ;
 	printf("Dans mfifo_read : \n");
 	printf("Len : %ld\n",len );
@@ -256,45 +294,101 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	    memset(&fifo->memory[i],0,1);
 	    count++ ;
 	}
-	printf("%s", (char*)buf);
-
+	printf("%s\n", (char*)buf);
+	mfifo_unlock(fifo);
     return count;
 
 }
 
 /**
-* Verrouille le mfifo pour la lecture
+* Verrouille le mfifo pour la lecture, fonction bloquante, attend tend que 
+* le verrou n'a pas été posé sur l'objet mfifo
+*
+* @return -1 en cas d'echec , 0 sinon
 */
 int mfifo_lock(mfifo *fifo){
+	/*ajout du pid du processus appelant dans la queue de la semaphore*/
+	if(sem_wait(&fifo->sem) == -1){
+		perror("sem wait ");
+		return -1;
+	}
+	return 0;
+}
 
-	return -1;
+/**
+*	Essais de vérouiller l'objet mfifo
+*
+* @return revoie 0 si l'obtention du verrou réussi, -1 sinon
+*/
+int mfifo_trylock(mfifo *fifo){
+	if(sem_trywait(&fifo->sem) == -1){
+		perror("sem trywait");
+		return -1;
+	}
+	return 0;
 }
 
 /**
 * Déverrouille l’accès au mfifo en lecture
+*
+* @return renvoie 0 lors de la libération du verrou , -1 en cas d'échec
 */
 int mfifo_unlock(mfifo *fifo){
-	return -1;
+	if(sem_post(&fifo->sem) == -1 ){
+		perror("sem post  ");
+		return -1;
+	}
+	return 0;
+}
+
+/*
+*	Renvoie la capacité totale de l'objet mfifo
+*/
+size_t mfifo_capacity(mfifo *fifo){
+	return fifo->capacity;
+}
+
+/*
+* Libere la mémoire allouer par l'objet fifo et ses diverses champs
+*
+* @param fifo ojbet mfifo dont l'on veut libérer la mémoire
+*/
+int free_mfifo(mfifo *fifo){
+	free((void *)fifo->nom);
+	free((void *)fifo->memory);
+	if(sem_destroy(&fifo->sem) == -1){
+		perror("destroy semaphore ");
+		return -1;
+	}
+	free(fifo);
+	return sizeof(fifo);
+}
+
+/*
+* Renvoie la quantié de mémoire libre de l'objet mfifo
+*/
+size_t mfifo_free_memory(mfifo *fifo){
+	return (fifo->capacity - strlen(fifo->memory) );
 }
 
 /**
-* Cette fonction déconnect, rend inutilisable, un objet mfifo, retourn -1 en cas d'erreur sinon 0
+* Cette fonction déconnect, rend inutilisable, un objet mfifo, retourn -1 en
+* cas d'erreur sinon 0
 *
 * @param fifo	objet mfifo à rendre ne plus utiliser
 */
 int mfifo_disconnect(mfifo *fifo){
-	printf("dans disconnect \n");
-	printf("fifo debut : %ld \n", fifo->debut );
-	printf("Cap. fifo : %ld \n" , fifo->capacity);
-	int r = munmap( (void*)fifo->debut , fifo->capacity );
-	printf("Retour munmap : %d \n" , r );
-	return r;
+	if( munmap((void*)fifo->debut , fifo->capacity) == -1){
+		perror("munmap ");
+		return -1;
+	}
+	return 0;
 }
 
 /**
 * Cette fonction supprime un objet mfifo par son nom, retourn -1 en cas d'erreur sinon 0
 *
-* @param nom	nom de l'objet mfifo à supprimer
+* @param nom nom de l'objet mfifo à supprimer
 */
 int mfifo_unlink(const char * nom){
 	printf("dans unlink : nome := %s \n",nom );
