@@ -22,7 +22,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 
 	if ( !capacite || capacite == 0 ){
 		perror("Capacité NULL ou = 0 , Erreur");
-		exit(1);
+		return NULL;
 	}
 	mfifo * fifo = malloc(sizeof(mfifo)) ;
 	/* debut fifo correspondant au retour de malloc */
@@ -34,15 +34,9 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		void * addr = mmap(NULL, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 		if (addr == MAP_FAILED){
             perror("mmap");
-           	exit(1);
+           	return NULL;
         }
-
 		fill_mfifo(fifo,(size_t) addr, capacite);
-
-		int val;
-		sem_getvalue(&fifo->sem, &val);
-		printf("valeur semaphore 44: %d \n",val );
-		printf("Creation tube anonyme a l'adresse suivante : %p avec une capacite de : %ld \n", &addr , capacite);
 	    return fifo ;
 	}
 	if ( nom != NULL ){
