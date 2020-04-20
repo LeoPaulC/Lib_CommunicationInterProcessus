@@ -71,6 +71,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			        	}
 		    			close(fd);
 		    			fill_mfifo(fifo,(size_t) addr, capacite);
+			    		memset(fifo->memory, 0, strlen(fifo->memory));
 		    			return fifo ;
 		    		}
 		    		else{
@@ -105,6 +106,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
 			    			close(fd);
 			  				fill_mfifo(fifo,(size_t) addr, capacite);
+			    			memset(fifo->memory, 0, strlen(fifo->memory));
 			    			return fifo ;
 						}
 					}
@@ -117,6 +119,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 			    			close(fd);
 			    			fill_mfifo(fifo,(size_t) addr, capacite);
+			    			memset(fifo->memory, 0, strlen(fifo->memory));
 			    			return fifo ;
 						}
 					}
@@ -143,7 +146,7 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 		perror("sem init 210 ");
 	}
 	//fifo->memory = malloc(sizeof(char)*fifo->capacity);
-	memset(fifo->memory, 0, strlen(fifo->memory));
+	//memset(fifo->memory, 0, strlen(fifo->memory));
 	printf("memory %s\n",fifo->memory );
 }
 
