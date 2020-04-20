@@ -71,7 +71,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 			        	}
 		    			close(fd);
 		    			fill_mfifo(fifo,(size_t) addr, capacite);
-			    		memset(fifo->memory, 0, strlen(fifo->memory));
+		    			init_memory_mfifo(fifo);
 		    			return fifo ;
 		    		}
 		    		else{
@@ -106,7 +106,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, permission);
 			    			close(fd);
 			  				fill_mfifo(fifo,(size_t) addr, capacite);
-			    			memset(fifo->memory, 0, strlen(fifo->memory));
+			  				init_memory_mfifo(fifo);
 			    			return fifo ;
 						}
 					}
@@ -119,7 +119,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 							void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 			    			close(fd);
 			    			fill_mfifo(fifo,(size_t) addr, capacite);
-			    			memset(fifo->memory, 0, strlen(fifo->memory));
+			    			init_memory_mfifo(fifo);
 			    			return fifo ;
 						}
 					}
@@ -137,7 +137,6 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 * @param capacite 	capacité totale de fifo
 */
 void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
-	printf("Dans fill mfifo \n"); 
 	fifo->debut = addr ;
 	fifo->fin = fifo->debut + capacite ;
 	fifo->capacity = capacite;
@@ -145,12 +144,16 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 	if(sem_init(&fifo->sem,1,1) == -1 ){
 		perror("sem init 210 ");
 	}
-	//fifo->memory = malloc(sizeof(char)*fifo->capacity);
-	//memset(fifo->memory, 0, strlen(fifo->memory));
-	printf("memory %s\n",fifo->memory );
 }
 
-
+/**
+* Initialise la memoire d'un mfifo
+*
+* @param fifo objet fifo dont il faut initialiser la memoire
+*/
+void init_memory_mfifo(mfifo * fifo){
+	memset(fifo->memory, 0, strlen(fifo->memory));
+}
 
 
 
@@ -163,24 +166,16 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 	*/
 int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	size_t cpt = mfifo_free_memory(fifo);
-	
-	printf("Dans mfifo_write : \n");
-	printf("Len : %ld\n",len );
 	// On test que LEN est bien < fifo->capacite .
 	if ( len > fifo->capacity || cpt < len ){
 		perror("Erreur , Len > fifo->capacite\n");
 		errno = EMSGSIZE;
 		return -1;
 	}
-	cpt = fifo->capacity - (cpt) ;
-	printf("cpt : %d\n",cpt );
-    printf("> Content : %s\n", (char*)val);
-    printf("> Ecriture.. \n");
+	cpt = fifo->capacity - cpt ;
     // on copie len octets dans fifo->memory
     snprintf(fifo->memory + strlen(fifo->memory), fifo->capacity - strlen(fifo->memory),
-     "%s", val);
-   	printf("Content fifo->memory : %s\n" , fifo->memory);
-   	printf("memory size :%d\n",strlen(fifo->memory) );
+     "%s",(char *) val);
    	
     return len;
 }
@@ -194,15 +189,7 @@ bloqués en attendant la fin de la lecture du seul processus autorisé à lire. 
 lit donc un segment contigu d’octets stockés dans le mfifo.
 */
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
-	int val;
-	mfifo_lock(fifo);
-	sem_getvalue(&fifo->sem, &val);
-	printf("valeur semaphore pendant le lock: %d \n",val );
-
 	int count = 0 ;
-	printf("Dans mfifo_read : \n");
-	printf("Len : %ld\n",len );
-	printf("Buf : %s\n> ",  (char*)buf );
 	
 	for ( int i = 0 ; i < (int)len ; i++ ){
 		memcpy( &buf[i], &fifo->memory[i] , 1 );
@@ -290,7 +277,7 @@ int free_mfifo(mfifo *fifo){
 		perror("destroy semaphore ");
 		return -1;
 	}
-	return strlen(fifo);
+	return sizeof(fifo);
 }
 
 /**
@@ -325,7 +312,7 @@ int mfifo_disconnect(mfifo *fifo){
 * @return 		retourne -1 en cas d'erreur sinon 0
 */
 int mfifo_unlink(const char * nom){
-	printf("dans unlink : nome := %s \n",nom );
+	printf("dans unlink : nom := %s \n",nom );
 	int r = shm_unlink(nom);
 	if( r == -1){
 		perror("shm unlink");
