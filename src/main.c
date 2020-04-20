@@ -34,8 +34,12 @@ int main(void)
 	printf("On tente une ecriture dans mfifo : \n");
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore main: %d \n",val );
-	char* buf = "Ceci est un test d'Ecriture!" ;
+	char* buf = "Ceci est un test d'Ecriture" ;
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
+
+	char* bu = "Coucou test" ;
+	res_write = mfifo_write(fifo,bu,strlen(bu));
+
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore main: %d \n",val );
 	printf("Res write : %d\n", res_write );	

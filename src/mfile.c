@@ -166,16 +166,15 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 		errno = EMSGSIZE;
 		return -1;
 	}
-	
 	cpt = fifo->capacity - cpt ;
-
     printf("> Content : %s\n", (char*)val);
     printf("> Ecriture.. \n");
     // on copie len octets dans fifo->memory
-    memcpy( &fifo->memory[cpt-1], val , len );
+    memcpy( &fifo->memory[cpt], val , len );
 
-   	printf("Content fifo->memory : %s\n", fifo->memory);
-    
+   	printf("Content fifo->memory : %s\n" , fifo->memory);
+
+   	
     return len;
 }
 
@@ -200,10 +199,15 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	
 	for ( int i = 0 ; i < (int)len ; i++ ){
 		memcpy( &buf[i], &fifo->memory[i] , 1 );
-	    memset(&fifo->memory[i],0,1);
 	    count++ ;
 	}
+	memset(&fifo->memory[0],0,len);
 	printf("Read :: %s\n", (char*)buf);
+
+	// inserer ICI la fonction de decalage de memoire
+
+	printf("Fifo->memory : %s\n", &fifo->memory[len]);
+
 	mfifo_unlock(fifo);
     return count;
 
