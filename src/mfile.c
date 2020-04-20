@@ -177,8 +177,8 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
     printf("> Content : %s\n", (char*)val);
     printf("> Ecriture.. \n");
     // on copie len octets dans fifo->memory
-    //memcpy( &fifo->memory[cpt], val , len );
-    strcat(fifo->memory, val);
+    snprintf(fifo->memory + strlen(fifo->memory), fifo->capacity - strlen(fifo->memory),
+     "%s", val);
    	printf("Content fifo->memory : %s\n" , fifo->memory);
    	printf("memory size :%d\n",strlen(fifo->memory) );
    	
