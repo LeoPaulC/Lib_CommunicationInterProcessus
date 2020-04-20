@@ -142,6 +142,9 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 	if(sem_init(&fifo->sem,1,1) == -1 ){
 		perror("sem init 210 ");
 	}
+	//fifo->memory = malloc(sizeof(char)*fifo->capacity);
+	memset(fifo->memory, 0, strlen(fifo->memory));
+	printf("memory %s\n",fifo->memory );
 }
 
 
@@ -166,14 +169,15 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 		errno = EMSGSIZE;
 		return -1;
 	}
-	cpt = fifo->capacity - cpt ;
+	cpt = fifo->capacity - (cpt) ;
+	printf("cpt : %d\n",cpt );
     printf("> Content : %s\n", (char*)val);
     printf("> Ecriture.. \n");
     // on copie len octets dans fifo->memory
-    memcpy( &fifo->memory[cpt], val , len );
-
+    //memcpy( &fifo->memory[cpt], val , len );
+    strcat(fifo->memory, val);
    	printf("Content fifo->memory : %s\n" , fifo->memory);
-
+   	printf("memory size :%d\n",strlen(fifo->memory) );
    	
     return len;
 }
@@ -271,17 +275,19 @@ size_t mfifo_capacity(mfifo *fifo){
 * Libere la mémoire allouer par l'objet fifo et ses diverses champs
 *
 * @param 	fifo ojbet mfifo dont l'on veut libérer la mémoire
-* @return 	?????
+* @return 	renvoie la taille du fifo apres libération de mémoire
 */
 int free_mfifo(mfifo *fifo){
-	free((void *)fifo->nom);
-	free((void *)fifo->memory);
+	printf("dans free mfifo\n");
+	free(&fifo->nom);
+	if( strlen(fifo->memory) !=0 ){
+		free(fifo->memory);
+	}
 	if(sem_destroy(&fifo->sem) == -1){
 		perror("destroy semaphore ");
 		return -1;
 	}
-	free(fifo);
-	return sizeof(fifo);
+	return strlen(fifo);
 }
 
 /**

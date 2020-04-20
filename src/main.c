@@ -11,15 +11,20 @@ int main(void)
 	Init();
 	printf("------ Creation PUIS Connexion : -------\n");
 	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
+	printf("%s\n", fifo->memory );
 	fifo = mfifo_connect("testBis",0,0777,LEN);
+	printf("%s\n", fifo->memory );
 	int val;
 	sem_getvalue(&fifo->sem, &val);
 
 	printf("valeur semaphore main: %d \n",val );
 	printf("Debut du pointeur fifo : %ld \n", fifo->debut );
 	printf("Cap. fifo : %ld \n" , fifo->capacity);
+	printf("%s\n", fifo->memory );
 	printf("capacity : %ld \n",mfifo_capacity(fifo) );
+	printf("%s\n", fifo->memory );
 	printf("free memory : %ld \n",mfifo_free_memory(fifo) );
+	printf("%s\n", fifo->memory );
 	printf("Fin du pointeur fifo : %ld \n", fifo->fin );
 	printf("Pid du fifo : %d \n", fifo->pid );
 
@@ -34,7 +39,8 @@ int main(void)
 	printf("On tente une ecriture dans mfifo : \n");
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore main: %d \n",val );
-	char* buf = "Ceci est un test d'Ecriture" ;
+
+	char* buf = "Ceci est un test d'Ecriture !" ;
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
 
 	char* bu = "Coucou test" ;
@@ -46,7 +52,7 @@ int main(void)
 
 	char * buf_read = malloc(sizeof(char)*strlen(buf)+1) ;
 
-	size_t res_read = mfifo_read(fifo, buf_read,strlen(buf)+1);
+	size_t res_read = mfifo_read(fifo, buf_read,strlen(buf));
 
 	printf("\nRes read : %ld\n " , res_read);
 
@@ -67,11 +73,14 @@ int main(void)
 	//execlp("ls","ls","/dev/shm/",NULL);
 
 
+
 	printf("deconnexion de : %s\n",fifo->nom );
 	mfifo_disconnect(fifo);
 
 	printf("suppression de : %s\n",fifo->nom );
 	mfifo_unlink(fifo->nom);
+
+	printf("taille suppr : %d\n",free_mfifo(fifo));
 
 	printf("Etat apres suppression\n" );
 	printf("Contenu du dossier /dev/shm/ : \n" );
