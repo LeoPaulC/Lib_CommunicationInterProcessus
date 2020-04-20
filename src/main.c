@@ -34,15 +34,17 @@ int main(void)
 	printf("On tente une ecriture dans mfifo : \n");
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore main: %d \n",val );
-	char* buf = "abcd" ;
+	char* buf = "Ceci est un test d'Ecriture!" ;
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
 	sem_getvalue(&fifo->sem, &val);
 	printf("valeur semaphore main: %d \n",val );
 	printf("Res write : %d\n", res_write );	
 
-	char * buf_read = malloc(sizeof(char)*strlen(buf)) ;
-	size_t res_read = mfifo_read(fifo, buf_read, sizeof(buf_read));
-	printf("\nRes read : %d\n " , res_read);
+	char * buf_read = malloc(sizeof(char)*strlen(buf)+1) ;
+
+	size_t res_read = mfifo_read(fifo, buf_read,strlen(buf)+1);
+
+	printf("\nRes read : %ld\n " , res_read);
 
 	/*
 	printf("\n\n------ Creation Tube anonyme : -------\n");
