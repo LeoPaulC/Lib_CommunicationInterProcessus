@@ -30,6 +30,14 @@ int main(void)
 		mfifo * fifo_enfant = mfifo_connect("testBis",0,0777,LEN);
 		int res_write = mfifo_write(fifo_enfant,buf,strlen(buf));
 		printf("b->memory : %s\n", fifo_enfant->memory );
+
+/*
+		int fd = shm_open("testBis", O_RDWR, 0777);
+		int r  = read(fd, &buf[0] ,strlen(buf)) ;
+
+		printf("LEcture a l'arrache %d  : %s \n",r , buf );
+
+*/
 		//printf("LEcture FIls :\n");
 		printf("------------------Fin Fils , ecriture reussis ---------\n");
 		return 0 ;
@@ -41,9 +49,15 @@ int main(void)
 		mfifo * c  = mfifo_connect("testBis",0,0777,LEN);
 		printf("c->memory : %p\n", c->memory );
 		printf("\nLECTURE PERE .....\n");
-		char * b = malloc(10);
-		int res_read = mfifo_read(c, b, 10);
+		/*char * b = malloc(10);
+		int res_read = mfifo_read(c, b, 10);*/
+		/*
+		char* buf = "Coucocu test de lecture !" ;
+		int fd = shm_open("testBis", O_RDWR, 0777);
+		read(fd,buf ,strlen(buf)) ;
 
+		printf("LEcture a l'arrache : %s \n", buf );
+*/
 		printf("\n Test creation de mfifo dans le pere : \n");
 		mfifo * fifo_papa = mfifo_connect("testPere",O_CREAT,0777,LEN);
 		printf("\nFin Creation\n");
@@ -57,8 +71,8 @@ int main(void)
 	
 
 
-	mfifo_disconnect(fifo);
-	mfifo_unlink(fifo->nom);
+	//mfifo_disconnect(fifo);
+	//mfifo_unlink(fifo->nom);
 	//printf("Etat apres suppression\n" );
 	printf("Contenu du dossier /dev/shm/ : \n" );
 	//execlp("ls","ls","/dev/shm/",NULL);
