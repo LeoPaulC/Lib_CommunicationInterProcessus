@@ -46,41 +46,67 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		strcat(name, nom);
 		switch(options){
 			case 0 :
+				printf("\nCONNEXION ....\n");
 				fd = shm_open(name, O_RDWR, permission);
 				if( fd == -1 ){
 					perror("shm open ");
 					return NULL;
 				}
 				struct stat buf_stat;
+				/*int res = ftruncate(fd, capacite ) ;
+				if ( res == -1 ) {
+					perror("0 - ftruncate");
+					return NULL ;
+				}*/
     	    	if (fstat(fd, &buf_stat) == -1) {
     	    		perror(" fstat ");
     	        	exit(1);
     	    	}
-    	    	printf("stat size %ld\n", buf_stat.st_size );
-    	    	printf("stat nb link %ld\n", buf_stat.st_nlink );
-    	    	printf("stat mode %d\n", buf_stat.st_mode );
-    	    	printf("stat nb block %d\n", buf_stat.st_blocks );
-				void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-				if (addr == MAP_FAILED){
+				printf("0 - 2 mmap stat size %ld\n", buf_stat.st_size );
+    	    	/*
+    	    	printf("0 - mmap stat size %ld\n", buf_stat.st_size );
+    	    	printf("0 - mmap stat nb link %ld\n", buf_stat.st_nlink );
+    	    	printf("0 - mmap stat mode %d\n", buf_stat.st_mode );
+    	    	printf("0 - mmap stat nb block %d\n", buf_stat.st_blocks );
+    	    	*/
+    	    	//*fifo->memory = mmap( NULL, buf_stat.st_size , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+    	    	*fifo->memory = mmap( NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+				if (*fifo->memory == MAP_FAILED){
 		            perror("mmap ");
 		            return NULL;
 		        }
+    	    	printf("0 - On a cree la map a l'adresse du memory : %p\n",  fifo->memory);
+    	    	printf("0 - Addr : %p \n", &fifo->memory[0] );
+
 	    		close(fd);
-				fill_mfifo(fifo,(size_t) addr, capacite);
+				fill_mfifo(fifo,(size_t) fifo->memory, capacite);
+				// on met dans memory Capacite octet de addr
+				//memcpy(&fifo->memory[0] ,"ABCD" , 4 ) ;
+
+				
+
+				printf("Content memory : %s\n", &fifo->memory[0] );
+				
     			return fifo ;
 
 			case O_CREAT :
 				if ( permission != 0  ){
 					fd = shm_open(name, O_CREAT | O_RDWR , permission );// cree avec permission
 					if ( fd != -1 ){
-						void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-						if (addr == MAP_FAILED){
+						//void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+						*fifo->memory = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+						if (*fifo->memory == MAP_FAILED){
 				            perror("O_creat , mmap");
 				           	return NULL;
 			        	}
+			        	printf("\nCREATION ............\n");
 		    			close(fd);
-		    			fill_mfifo(fifo,(size_t) addr, capacite);
+		    			fill_mfifo(fifo,(size_t) fifo->memory, capacite);
 		    			init_memory_mfifo(fifo);
+						
+						printf("O_create : addr : %p\n",fifo->memory);
+						printf("O_create : fifo->memory : %p\n", &fifo->memory[0]);
+
 		    			return fifo ;
 		    		}
 		    		else{
@@ -150,6 +176,10 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 	fifo->fin = fifo->debut + capacite ;
 	fifo->capacity = capacite;
 	fifo->pid = -1 ;
+	printf("fill_fifo : addr : %p \n", addr );
+	printf("fill_fifo : memory : %p\n", fifo->memory );
+
+	//*(fifo->memory) = &addr ;
 	if(sem_init(&fifo->sem,1,1) == -1 ){
 		perror("sem init 210 ");
 	}
@@ -163,9 +193,6 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 void init_memory_mfifo(mfifo * fifo){
 	memset(fifo->memory, 0, strlen(fifo->memory));
 }
-
-
-
 
 	/*
 	mfifo_write() bloque le processus appelant jusqu’à ce que len octets soient écrits dans
@@ -183,8 +210,9 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	}
 	cpt = fifo->capacity - cpt ;
     // on copie len octets dans fifo->memory
-    snprintf(fifo->memory + strlen(fifo->memory), fifo->capacity - strlen(fifo->memory),
-     "%s",(char *) val);
+    //snprintf(fifo->memory + strlen(fifo->memory), fifo->capacity - strlen(fifo->memory),"%s",(char *) val);
+    memcpy(fifo->memory + strlen(fifo->memory) , val , len) ;
+    printf("Cotent dans Write: %s\n",fifo->memory );
    	
     return len;
 }
@@ -198,18 +226,22 @@ bloqués en attendant la fin de la lecture du seul processus autorisé à lire. 
 lit donc un segment contigu d’octets stockés dans le mfifo.
 */
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
+	printf("READ de %d octets .\n" , len);
 	int count = 0 ;
+
+	//memcpy(buf,fifo->memory,len);
+	//printf("Buf : %s\n", buf );
 	
 	for ( int i = 0 ; i < (int)len ; i++ ){
+		//printf("%s\n", &fifo->memory[i] );
 		memcpy( &buf[i], &fifo->memory[i] , 1 );
 	    count++ ;
 	}
-	memset(&fifo->memory[0],0,len);
-	printf("Read :: %s\n", (char*)buf);
-
+	printf("Buf : %s\n", buf );
+	memset(fifo->memory,0,len);
+	//printf("Read :%s\n", buf);
 	// inserer ICI la fonction de decalage de memoire
-
-	printf("Fifo->memory : %s\n", &fifo->memory[len]);
+	printf("Content restant dans Fifo->memory : %s\n", &fifo->memory[len]);
 
 	mfifo_unlock(fifo);
     return count;
@@ -307,7 +339,7 @@ size_t mfifo_free_memory(mfifo *fifo){
 * @return 		renvoie 0 en cas de succès, -1 sinon
 */
 int mfifo_disconnect(mfifo *fifo){
-	if( munmap((void*)fifo->debut , fifo->capacity) == -1){
+	if( munmap(*fifo->memory , fifo->capacity) == -1){
 		perror("munmap ");
 		return -1;
 	}
