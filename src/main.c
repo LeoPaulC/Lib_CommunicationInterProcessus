@@ -10,8 +10,8 @@ int main(void)
 {
 	Init();
 	printf("------ Creation PUIS Connexion : -------\n");
-
 	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
+	
 
 	//char* buf = "Ceci est un test d'Ecriture !" ;
 	//int res_write = mfifo_write(fifo,buf,strlen(buf));
@@ -25,57 +25,57 @@ int main(void)
 	pid_t pid = fork();
 
 	if ( pid == 0 ) {
-		printf("\n----------Fils :: \n");
+		printf("\n\n----------Fils -------------- \n");
 		char* buf = "Ceci est un test d'Ecriture !" ;
 		mfifo * fifo_enfant = mfifo_connect("testBis",0,0777,LEN);
 		int res_write = mfifo_write(fifo_enfant,buf,strlen(buf));
-		printf("b->memory : %s\n", fifo_enfant->memory );
 
-/*
-		int fd = shm_open("testBis", O_RDWR, 0777);
-		int r  = read(fd, &buf[0] ,strlen(buf)) ;
+		printf("Fifo_enfant Content : \n> " );		
+		printf("%s",  &fifo_enfant->memory );
 
-		printf("LEcture a l'arrache %d  : %s \n",r , buf );
+		const char * buff = "testEcritureDepuisUnWrite" ;
+		int res = mfifo_write(fifo_enfant, buff, strlen(buff));
+		//int res = write(fd,"testEcritureDepuisUnWrite",strlen("testEcritureDepuisUnWrite"));
+    	printf("Res du Write dans Fils : len %d , content : %s \n", res , buff );
 
-*/
-		//printf("LEcture FIls :\n");
-		printf("------------------Fin Fils , ecriture reussis ---------\n");
-		return 0 ;
+		/*
+		int r = msync(&fifo_enfant->memory, sysconf(_SC_PAGESIZE) , MS_SYNC);
+		if ( r == -1 ) perror("Msync:");
+		printf("\nRetour de Msync : %d \n", r );
+		*/
+		return EXIT_SUCCESS ;
 	}
 	else {
 		//sleep(2);
 		waitpid(pid , &status , 0);
-		printf("\n------------Pere :\n");
+		printf("\n\n------------ Pere ---------------\n");
 		mfifo * c  = mfifo_connect("testBis",0,0777,LEN);
-		printf("c->memory : %p\n", c->memory );
-		printf("\nLECTURE PERE .....\n");
-		/*char * b = malloc(10);
-		int res_read = mfifo_read(c, b, 10);*/
-		/*
-		char* buf = "Coucocu test de lecture !" ;
-		int fd = shm_open("testBis", O_RDWR, 0777);
-		read(fd,buf ,strlen(buf)) ;
 
-		printf("LEcture a l'arrache : %s \n", buf );
-*/
-		printf("\n Test creation de mfifo dans le pere : \n");
-		mfifo * fifo_papa = mfifo_connect("testPere",O_CREAT,0777,LEN);
-		printf("\nFin Creation\n");
+		printf("c->memory : %s\n", &c->memory );
 
-		mfifo_disconnect(fifo_papa);
-		mfifo_unlink(fifo_papa->nom);
+		char * buf = malloc(sizeof(char)* getpagesize() );
+    	
+    	int res = mfifo_read(c, buf, 10 ) ; // 10 pour nos test
+		//int res = read(fd,buf,getpagesize()) ;
+    	printf("Res du READ de fd : %s\n\n", buf );
+		mfifo_disconnect(c);
+		mfifo_unlink(c->nom);
+		
+		//printf("Etat apres suppression\n" );
+		printf("Contenu du dossier /dev/shm/ : \n" );
+		//execlp("ls","ls","/dev/shm/",NULL);
 
 	}
 
 
 	
 
+	printf("\n\n");
 
-	//mfifo_disconnect(fifo);
-	//mfifo_unlink(fifo->nom);
-	//printf("Etat apres suppression\n" );
-	printf("Contenu du dossier /dev/shm/ : \n" );
-	//execlp("ls","ls","/dev/shm/",NULL);
+	mfifo_disconnect(fifo);
+	mfifo_unlink(fifo->nom);
+
+	
 	
 
 
