@@ -51,6 +51,15 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 					perror("shm open ");
 					return NULL;
 				}
+				struct stat buf_stat;
+    	    	if (fstat(fd, &buf_stat) == -1) {
+    	    		perror(" fstat ");
+    	        	exit(1);
+    	    	}
+    	    	printf("stat size %ld\n", buf_stat.st_size );
+    	    	printf("stat nb link %ld\n", buf_stat.st_nlink );
+    	    	printf("stat mode %d\n", buf_stat.st_mode );
+    	    	printf("stat nb block %d\n", buf_stat.st_blocks );
 				void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 				if (addr == MAP_FAILED){
 		            perror("mmap ");

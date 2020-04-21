@@ -4,14 +4,13 @@
 #include <string.h>
 #include "mfile.h"
 
-#define LEN 512
+#define LEN 1024
 
 int main(void)
 {
 	Init();
 	printf("------ Creation PUIS Connexion : -------\n");
 	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
-	fifo = mfifo_connect("testBis",0,0777,LEN);
 	int val;
 	sem_getvalue(&fifo->sem, &val);
 	printf("capacity : %ld \n",mfifo_capacity(fifo) );
@@ -27,16 +26,12 @@ int main(void)
 	char* bu = "Coucou test" ;
 	res_write = mfifo_write(fifo,bu,strlen(bu));
 
-	sem_getvalue(&fifo->sem, &val);
-	char * buf_read = malloc(sizeof(char)*strlen(buf)+1) ;
+	printf("etat memory : %s\n", fifo->memory );
 
-	size_t res_read = mfifo_read(fifo, buf_read,strlen(buf));
-
+	fifo = mfifo_connect("testBis",0,0777,LEN);
 	mfifo_disconnect(fifo);
 	mfifo_unlink(fifo->nom);
-
-	printf("taille suppr : %d\n",free_mfifo(fifo));
-	printf("Etat apres suppression\n" );
+	//printf("Etat apres suppression\n" );
 	printf("Contenu du dossier /dev/shm/ : \n" );
 	execlp("ls","ls","/dev/shm/",NULL);
 	
