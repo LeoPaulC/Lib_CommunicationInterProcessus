@@ -75,28 +75,24 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
     	    	int segment_id = shmget (fd, getpagesize(),  S_IRUSR | S_IWUSR);
 
     	    	printf("segment id : %d\n", segment_id );
-
 				*fifo->memory = shmat (segment_id, 0, 0);
+				/*
 
-				//*fifo->memory = mmap( NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
-				/*if (*fifo->memory == MAP_FAILED){
+				*fifo->memory = mmap( NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+				if (*fifo->memory == MAP_FAILED){
 		            perror("mmap ");
 		            return NULL;
-		        }*/
+		        }
+		        */
     	    	printf("0 - On a cree la map a l'adresse du memory : %p\n",  fifo->memory);
-    	    	printf("0 - Addr : %p \n", &fifo->memory[0] );
-
+    	    	//printf("0 - Addr : %p \n", &fifo->memory[0] );
 	    		close(fd);
-				fill_mfifo(fifo,(size_t) fifo->memory, capacite);
-				// on met dans memory Capacite octet de addr
-				//memcpy(&fifo->memory[0] ,"ABCD" , 4 ) ;
 
-				
-				int r = msync(*fifo->memory, buf_stat.st_size, MS_INVALIDATE) ;
+				int r = msync(*fifo->memory, buf_stat.st_size, MS_SYNC) ;
 				printf("res mysinc : %d \n", r);
 
-				printf("Content memory : %s\n", &fifo->memory[0] );
-				
+				fill_mfifo(fifo,(size_t) fifo->memory, capacite);
+
     			return fifo ;
 
 			case O_CREAT :
@@ -104,6 +100,17 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 					fd = shm_open(name, O_CREAT | O_RDWR , permission );// cree avec permission
 					if ( fd != -1 ){
 						//void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+						struct stat buf_stat;
+						/*int res = ftruncate(fd, capacite ) ;
+						if ( res == -1 ) {
+							perror("0 - ftruncate");
+							return NULL ;
+						}*/
+		    	    	if (fstat(fd, &buf_stat) == -1) {
+		    	    		perror(" fstat ");
+		    	        	exit(1);
+		    	    	}
+
 						*fifo->memory = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 						if (*fifo->memory == MAP_FAILED){
 				            perror("O_creat , mmap");
@@ -115,7 +122,11 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		    			init_memory_mfifo(fifo);
 						
 						printf("O_create : addr : %p\n",fifo->memory);
-						printf("O_create : fifo->memory : %p\n", &fifo->memory[0]);
+						//printf("O_create : fifo->memory : %p\n", &fifo->memory[0]);
+
+						int r = msync(*fifo->memory, buf_stat.st_size, MS_SYNC) ;
+						printf("res mysinc : %d \n", r);
+
 
 		    			return fifo ;
 		    		}
@@ -221,8 +232,13 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	cpt = fifo->capacity - cpt ;
     // on copie len octets dans fifo->memory
     //snprintf(fifo->memory + strlen(fifo->memory), fifo->capacity - strlen(fifo->memory),"%s",(char *) val);
+	// Synchro
+	size_t l = strlen(fifo->memory);
+	int r = msync(*fifo->memory, l, MS_SYNC) ;
+	printf("Avant Ecriture , res mysinc : %d \n", r);
+
     memcpy(fifo->memory + strlen(fifo->memory) , val , len) ;
-    printf("Cotent dans Write: %s\n",fifo->memory );
+    printf("Write à : %p\n",fifo->memory );
    	
     return len;
 }
@@ -239,6 +255,12 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	printf("READ de %d octets .\n" , len);
 	int count = 0 ;
 
+	// Synchro
+	size_t l = strlen(fifo->memory);
+	int r = msync(*fifo->memory, l, MS_SYNC) ;
+	printf("Avant LEcture , res mysinc : %d \n", r);
+
+	printf("Read à : %p\n",fifo->memory );
 	//memcpy(buf,fifo->memory,len);
 	//printf("Buf : %s\n", buf );
 	
