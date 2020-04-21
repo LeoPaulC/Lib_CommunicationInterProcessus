@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <sys/types.h>
+#include <sys/shm.h>
 #include <unistd.h>
 #include <sys/stat.h> /* Pour les constantes « mode » */
 #include <fcntl.h> /* Pour les constantes O_* */ 
@@ -62,7 +63,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
     	    		perror(" fstat ");
     	        	exit(1);
     	    	}
-				printf("0 - 2 mmap stat size %ld\n", buf_stat.st_size );
+				//printf("0 - 2 mmap stat size %ld\n", buf_stat.st_size );
     	    	/*
     	    	printf("0 - mmap stat size %ld\n", buf_stat.st_size );
     	    	printf("0 - mmap stat nb link %ld\n", buf_stat.st_nlink );
@@ -70,11 +71,18 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
     	    	printf("0 - mmap stat nb block %d\n", buf_stat.st_blocks );
     	    	*/
     	    	//*fifo->memory = mmap( NULL, buf_stat.st_size , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
-    	    	*fifo->memory = mmap( NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
-				if (*fifo->memory == MAP_FAILED){
+
+    	    	int segment_id = shmget (fd, getpagesize(),  S_IRUSR | S_IWUSR);
+
+    	    	printf("segment id : %d\n", segment_id );
+
+				*fifo->memory = shmat (segment_id, 0, 0);
+
+				//*fifo->memory = mmap( NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED , fd, 0);
+				/*if (*fifo->memory == MAP_FAILED){
 		            perror("mmap ");
 		            return NULL;
-		        }
+		        }*/
     	    	printf("0 - On a cree la map a l'adresse du memory : %p\n",  fifo->memory);
     	    	printf("0 - Addr : %p \n", &fifo->memory[0] );
 
@@ -84,6 +92,8 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 				//memcpy(&fifo->memory[0] ,"ABCD" , 4 ) ;
 
 				
+				int r = msync(*fifo->memory, buf_stat.st_size, MS_INVALIDATE) ;
+				printf("res mysinc : %d \n", r);
 
 				printf("Content memory : %s\n", &fifo->memory[0] );
 				

@@ -25,10 +25,12 @@ int main(void)
 
 	char* buf = "Ceci est un test d'Ecriture !" ;
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
+	printf("b->memory : %s\n", fifo->memory );
 
 	mfifo * c  = mfifo_connect("testBis",0,0777,LEN);
 	printf("c->memory : %s\n", c->memory );
 
+	printf("\nLECTURE.....\n");
 	char * b = malloc(50);
 	int res_read = mfifo_read(fifo, b, 10);
 
@@ -37,7 +39,7 @@ int main(void)
 	mfifo_unlink(fifo->nom);
 	//printf("Etat apres suppression\n" );
 	printf("Contenu du dossier /dev/shm/ : \n" );
-	execlp("ls","ls","/dev/shm/",NULL);
+	//execlp("ls","ls","/dev/shm/",NULL);
 	
 
 
