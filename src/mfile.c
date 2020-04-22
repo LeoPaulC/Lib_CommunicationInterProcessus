@@ -56,17 +56,47 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 
 			case O_CREAT :
 				if ( permission != 0  ){
-		    		if( creation_mfifo_nomme(name, capacite, permission, fifo) == -1){	    			
+					fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );// cree avec permission
+					if ( fd != -1 ){
+						//void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+						
+						struct stat buf_stat;
+						if (fstat(fd, &buf_stat) == -1) {
+		    	    		perror(" fstat ");
+		    	        	exit(1);
+		    	    	}
+						if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
+							perror("Ftruncate");
+							exit(1);
+		  				}
+
+					  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+						if( fifo == MAP_FAILED){
+						    //mfifo_unlink(name);
+						    perror("O_CREAT - mmap");
+						    exit(1);
+					  	}
+		    			close(fd);
+						printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
+		    			fill_mfifo(fifo,(size_t) fifo , capacite);
+		    			init_memory_mfifo(fifo);
+
+		    			/*if(creation_mfifo_nomme(fd, name, capacite, permission, fifo) == -1){
+		    				printf("echec de creation \n");
+		    				return NULL;
+		    			}
+		    			printf("apres creation fifo :\n");
+		    			printf("cap %d\n",fifo->capacity);*/
+    					return fifo ;
+		    		}
+		    		else{		    			
 		    			printf("Dans O_create ( fifo existe deja ) \n");
 		    			if(connexion_mfifo_nomme(name, capacite, permission, fifo) == -1){
 		    				printf("echec de connexion \n");
 							return NULL;
 						}
+    					return fifo ;
 		    		}
-		    		printf("cap dans dans fonction Connect\n");
-		    		printf("fifo cap %ld\n", fifo->capacity );
-		    		printf("fifo cap %d\n", fifo->capacity );
-    				return fifo ;
 				}				
 				break;
 			case O_CREAT|O_EXCL :
@@ -167,9 +197,6 @@ int creation_mfifo_nomme(char * name, size_t capacite, mode_t permission, mfifo 
 	printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
 	fill_mfifo(fifo,(size_t) fifo , capacite);
 	init_memory_mfifo(fifo);
-	printf("cap dans dans fonction create\n");
-	printf("fifo cap %ld\n", fifo->capacity );
-	printf("fifo cap %d\n", fifo->capacity );
 	return 0;
 }
 
