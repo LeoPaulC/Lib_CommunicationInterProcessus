@@ -25,7 +25,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		perror("Capacité NULL ou = 0 , Erreur");
 		return NULL;
 	}
-	mfifo * fifo = malloc(sizeof(mfifo)) ;
+	mfifo * fifo = malloc(sizeof(mfifo)*2) ;
 	/* debut fifo correspondant au retour de malloc */
 	if ( nom != NULL ){
 		fifo->nom = nom ;
@@ -48,83 +48,25 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		switch(options){
 			case 0 :
 				printf("\nCONNEXION ....\n");
-				fd = shm_open(name, O_RDWR, permission);
-				if( fd == -1 ){
-					perror("shm open ");
+				if(connexion_mfifo_nomme(name, capacite, permission, fifo) == -1){
+					printf("echec de connexion \n");
 					return NULL;
 				}
-				struct stat buf_stat;
-				if (fstat(fd, &buf_stat) == -1) {
-    	    		perror(" fstat ");
-    	        	exit(1);
-    	    	}
-
-			  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-				if( fifo == MAP_FAILED){
-				    //mfifo_unlink(name);
-				    perror("O - mmap");
-				    exit(1);
-			  	}
-    			close(fd);
-				printf("Dans 0 , adresse du fifo : %p\nReturn Fifo.\n", fifo );
-				printf("Contenu memoire a la connexion : %s\n", fifo->memory );
-    			fill_mfifo(fifo,(size_t) fifo , capacite);
 				return fifo ;
 
 			case O_CREAT :
 				if ( permission != 0  ){
-					fd = shm_open(name, O_CREAT | O_RDWR , permission );// cree avec permission
-					if ( fd != -1 ){
-						//void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-						struct stat buf_stat;
-						if (fstat(fd, &buf_stat) == -1) {
-		    	    		perror(" fstat ");
-		    	        	exit(1);
-		    	    	}
-						if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
-							perror("Ftruncate");
-							exit(1);
-		  				}
-
-					  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-						if( fifo == MAP_FAILED){
-						    //mfifo_unlink(name);
-						    perror("O - mmap");
-						    exit(1);
-					  	}
-		    			close(fd);
-						printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
-		    			fill_mfifo(fifo,(size_t) fifo , capacite);
-		    			init_memory_mfifo(fifo);
-    					return fifo ;
+		    		if( creation_mfifo_nomme(name, capacite, permission, fifo) == -1){	    			
+		    			printf("Dans O_create ( fifo existe deja ) \n");
+		    			if(connexion_mfifo_nomme(name, capacite, permission, fifo) == -1){
+		    				printf("echec de connexion \n");
+							return NULL;
+						}
 		    		}
-		    		else{
-		    			fd = shm_open(name, O_RDWR, permission );
-		    			if(fd == -1){
-		    				perror(" shm open ");
-		    				return NULL;
-		    			}
-						struct stat buf_stat;
-						if (fstat(fd, &buf_stat) == -1) {
-		    	    		perror(" fstat ");
-		    	        	exit(1);
-		    	    	}
-						if( buf_stat.st_size == 0 && ftruncate( fd, sizeof(message) + capacite ) == -1){
-							perror("Ftruncate");
-							exit(1);
-		  				}
-						struct message *buf;
-					  	buf = mmap(NULL, buf_stat.st_size+capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-						if( buf == MAP_FAILED){
-						    //mfifo_unlink(name);
-						    perror("O - mmap");
-						    exit(1);
-					  	}
-		    			close(fd);
-		    			fill_mfifo(fifo,(size_t) buf, capacite);
-		    			printf("Dans O_create ( fifo existe deja ) , fifo->memory : %s\nmmap_Buf : %s\nReturn Fifo.\n", fifo->memory , buf );
-    					return fifo ;
-		    		}
+		    		printf("cap dans dans fonction Connect\n");
+		    		printf("fifo cap %ld\n", fifo->capacity );
+		    		printf("fifo cap %d\n", fifo->capacity );
+    				return fifo ;
 				}				
 				break;
 			case O_CREAT|O_EXCL :
@@ -198,6 +140,67 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 	return fifo ;
 }
 
+int creation_mfifo_nomme(char * name, size_t capacite, mode_t permission, mfifo * fifo){
+	printf("creation, capacite : %d \n",capacite );
+	int fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );
+	if( fd == -1){
+		perror("shm_open --> shm deja crée");
+		return -1;
+	}
+	struct stat buf_stat;
+	if (fstat(fd, &buf_stat) == -1) {
+		perror(" fstat ");
+    	exit(1);
+	}
+	if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
+		perror("Ftruncate");
+		exit(1);
+		}
+
+  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	if( fifo == MAP_FAILED){
+	    //mfifo_unlink(name);
+	    perror("O_CREAT - mmap");
+	    exit(1);
+  	}
+	close(fd);
+	printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
+	fill_mfifo(fifo,(size_t) fifo , capacite);
+	init_memory_mfifo(fifo);
+	printf("cap dans dans fonction create\n");
+	printf("fifo cap %ld\n", fifo->capacity );
+	printf("fifo cap %d\n", fifo->capacity );
+	return 0;
+}
+
+/**
+* Gère la connexion d'un mfifo nommé
+*
+*/
+int connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission, mfifo * fifo){
+	int fd = shm_open(name, O_RDWR, permission);
+	if( fd == -1 ){
+		perror("shm open ");
+		return -1;
+	}
+	struct stat buf_stat;
+	if (fstat(fd, &buf_stat) == -1) {
+    	perror(" fstat ");
+    	return -1;
+    }
+	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	if( fifo == MAP_FAILED){
+		//mfifo_unlink(name);
+		perror("O - mmap");
+		return -1;
+	}
+    close(fd);
+	printf("Dans 0 , adresse du fifo : %p\nReturn Fifo.\n", fifo );
+	printf("Contenu memoire a la connexion : %s\n", fifo->memory );
+    fill_mfifo(fifo,(size_t) fifo , capacite);
+    return 0;
+}
+
 /**
 * Remplie un objet mfifo par diverses 
 *
@@ -206,6 +209,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 * @param capacite 	capacité totale de fifo
 */
 void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
+	printf("%d\n",capacite );
 	fifo->debut = addr ;
 	fifo->fin = fifo->debut + capacite ;
 	fifo->capacity = capacite;
@@ -239,6 +243,7 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	// On test que LEN est bien < fifo->capacite .
 	if ( len > fifo->capacity || cpt < len ){
 		perror("Erreur , Len > fifo->capacite\n");
+		printf("len : %d, fifo->capacity : %d, cpt : %d \n",len,fifo->capacity, cpt );
 		errno = EMSGSIZE;
 		return -1;
 	}

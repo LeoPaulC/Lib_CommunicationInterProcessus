@@ -15,6 +15,7 @@ int main(void)
 
 	char* buf = "Nous avons enfin un test concluant Chef :)" ;
 
+	printf("fifo cap main %ld\n",fifo->capacity );
 	int res_write = mfifo_write(fifo,buf,strlen(buf));
 	
 	int status = 0 ;
@@ -42,10 +43,10 @@ int main(void)
 		//sleep(2);
 		waitpid(pid , &status , 0);
 		printf("\n\n------------ Pere ---------------\n");
-		mfifo * fifo_pere= mfifo_connect("testBis",0,0777,LEN);
-		
+		mfifo * fifo_pere= mfifo_connect("testBis",O_CREAT,0777,LEN);
+		/*
 		mfifo_disconnect("testBis");
-		mfifo_unlink("testBis");
+		mfifo_unlink("testBis");*/
 		
 		//printf("Etat apres suppression\n" );
 		//printf("Contenu du dossier /dev/shm/ : \n" );
