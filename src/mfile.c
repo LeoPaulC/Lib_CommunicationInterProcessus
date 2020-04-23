@@ -25,7 +25,7 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		perror("Capacité NULL ou = 0 , Erreur");
 		return NULL;
 	}
-	mfifo * fifo = malloc(sizeof(mfifo)) ;
+	mfifo * fifo = malloc(sizeof(mfifo)*2) ;
 	/* debut fifo correspondant au retour de malloc */
 	if ( nom != NULL ){
 		fifo->nom = nom ;
@@ -194,19 +194,31 @@ void init_memory_mfifo(mfifo * fifo){
 int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	size_t cpt = mfifo_free_memory(fifo);
 	// On test que LEN est bien < fifo->capacite .
+
+	message * res = malloc(sizeof(message));
+	create_message(val,res);
+
+	printf("Dans mfifo Write Len = %d et strlen de val : %d \n", len ,strlen(val) );
+	printf("Et fifo->capicite = %d \n", fifo->capacity );
+
 	if ( len > fifo->capacity || cpt < len ){
 		perror("Erreur , Len > fifo->capacite\n");
 		printf("len : %d, fifo->capacity : %d, cpt : %d \n",len,fifo->capacity, cpt );
 		errno = EMSGSIZE;
 		return -1;
 	}
-	//memcpy(&fifo->memory[0] , val , len) ;
-	for ( int i = 0 ; i < len ; i++ ){
-		memcpy(&fifo->memory[i] , &val[i] , 1 ) ; 
-	}
-	//snprintf(fifo->memory, strlen(fifo->memory, "%d %s\n", last_idx, val);
-	//snprintf(fifo->memory+strlen(fifo->memory), 0, "%s", val);
-    printf("Content : %s a l'adresse : %p \n",fifo->memory, fifo->memory );
+
+
+	int l = res->l ;
+	printf("Content message a ecrire : %s De taille : %d  \n", &res->mes[0] , l);
+
+	char * content = malloc(8);
+
+	sprintf(content, "%d", l);
+
+	memcpy(&fifo->memory[0], content, 8 );
+
+	memcpy(&fifo->memory[7], &res->mes[0], l );
 
 	return len;
 }
@@ -233,7 +245,7 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	int fd = shm_open(fifo->nom, O_RDWR, 0777);
 	if( fd == -1 ){
 		perror("shm open ");
-		return NULL;
+		return -1;
 	}
 	struct stat buf_stat;
 	if (fstat(fd, &buf_stat) == -1) {
@@ -376,16 +388,17 @@ int mfifo_unlink(const char * nom){
 * @param buf contenu du message à créer
 */
 void create_message(char * buf, message * res){
-	printf("dans create  message\n");
+	//printf("dans create  message\n");
 	int taille = sizeof(message)+strlen(buf)+1;
 	realloc(res,taille);
-	printf("malloc\n");
+	//printf("malloc\n");
 	res->l = strlen(buf)+1;
-	printf("len : %ld\n", res->l);
+	//printf("len : %ld\n", res->l);
 	memset(res->mes, 0, strlen(res->mes));
 	memmove(res->mes,buf,res->l);
-	printf("mem : %s\n", res->mes);
+	//printf("mem : %s\n", res->mes);
 	//printf("l %ld\n",strlen(res->l) );
-	printf("l : %ld + contenu : %ld = %ld\n",sizeof(res->l), res->l, sizeof(res) );
+	//printf("l : %ld + contenu : %ld = %ld\n",sizeof(res->l), res->l, sizeof(res) );
+	printf("Create Message : %s \n",  res->mes );
 	//return res;
 }

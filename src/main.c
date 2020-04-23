@@ -13,16 +13,24 @@ int main(void)
 	
 	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
 
+	printf("capa %d  \n", fifo->capacity );
+	printf("fifo->memory :  %s\n", fifo->memory );
+
 	char* buf = "Nous avons enfin un test concluant Chef :)" ;
-	int r = mfifo_write(fifo,buf,(strlen(buf)));
-	printf("fifo cap main %s\n",fifo->memory );
-	message * res = malloc(sizeof(message));
-	create_message(buf,res);
-	printf("taille message %ld\n",sizeof(res)+res->l+1 );
+	//message * res = malloc(sizeof(message));
+
+	//create_message(buf,res);
+
+	int r = mfifo_write(fifo,buf,strlen(buf));
+
+	printf("Main l du message dans fifo->memory :  %s\n", &fifo->memory[0] );
+	printf("Main content fifo->memory :  %s\n", &fifo->memory[7] );
+	/*printf("taille message %ld\n",sizeof(res)+res->l+1 );
 	printf("affchage message :\n");
 	printf("longueur :%ld\n", res->l );
 	printf("contenu :%s\n", res->mes );
-	printf("ecriture du message\n" );		
+	printf("ecriture du message\n" );		*/
+	/*
 	int status = 0 ;
 	pid_t pid = fork();
 
@@ -42,6 +50,7 @@ int main(void)
 		if ( r == -1 ) perror("Msync:");
 		printf("\nRetour de Msync : %d \n", r );
 		*/
+	/*
 		return EXIT_SUCCESS ;
 	}
 	else {
@@ -56,8 +65,13 @@ int main(void)
 		//printf("Etat apres suppression\n" );
 		//printf("Contenu du dossier /dev/shm/ : \n" );
 		//execlp("ls","ls","/dev/shm/",NULL);
-
+	/*
 	}
+	*/
+	mfifo_disconnect("testBis");
+	mfifo_unlink("testBis");
+
+
 	return EXIT_SUCCESS;
 }
 					
