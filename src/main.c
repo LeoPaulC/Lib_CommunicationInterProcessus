@@ -18,6 +18,7 @@ int main(void)
 	//printf("fifo cap main %s\n",fifo->memory );
 	
 	int status = 0 ;
+	
 
 	printf("main cap %ld\n", fifo->capacity );
 	printf("main memory %s\n", fifo->memory );

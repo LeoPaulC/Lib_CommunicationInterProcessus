@@ -33,6 +33,7 @@ typedef struct{
 	char mes[];
 } message;
 
+
 /* Associated fonctions  */
 
 void Init(void);

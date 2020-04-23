@@ -60,6 +60,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 				break;
 
 			case O_CREAT :
+			
 				if ( permission != 0  ){
 					mfifo * res = creation_mfifo_nomme( name, capacite, permission);
 					if( res == NULL){
@@ -74,6 +75,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 				break;
 
 			case O_CREAT|O_EXCL :
+
 				if( permission != 0){
 					printf("excl\n");
 					mfifo * res = creation_mfifo_nomme( name, capacite, permission);
