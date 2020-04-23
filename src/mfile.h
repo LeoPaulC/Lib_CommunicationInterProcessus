@@ -42,7 +42,6 @@ int mfifo_disconnect(mfifo *fifo);
 int mfifo_unlink(const char*nom);
 
 int mfifo_write(mfifo *fifo, const void *buf, size_t len);
-
 int mfifo_trywrite(mfifo *fifo, const void *buf, size_t len);
 int mfifo_write_partial(mfifo *fifo, const void *buf, size_t len);
 

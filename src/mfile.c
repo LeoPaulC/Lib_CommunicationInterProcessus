@@ -25,7 +25,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 		perror("Capacité NULL ou = 0 , Erreur");
 		return NULL;
 	}
-	mfifo * fifo = malloc(sizeof(mfifo)*2) ;
+	mfifo * fifo = malloc(sizeof(mfifo)) ;
 	/* debut fifo correspondant au retour de malloc */
 	if ( nom != NULL ){
 		fifo->nom = nom ;
@@ -54,7 +54,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 						printf("echec de connexion \n");
 						return NULL;
 					}
-					printf("Contenu memoire au retour de conecxion nomme  : %s\n", res->memory );
+					//printf("Contenu memoire au retour de conecxion nomme  : %s\n", res->memory );
 					return res ;
 				}
 				break;
@@ -66,7 +66,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 					if( res == NULL){
 						res = connexion_mfifo_nomme(name, capacite, permission);
 						if( res == NULL ){
-							printf("echec de conne\n");
+							//printf("echec de conne\n");
 							return NULL;
 						}
 					}
@@ -77,11 +77,11 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 			case O_CREAT|O_EXCL :
 
 				if( permission != 0){
-					printf("excl\n");
+					//printf("excl\n");
 					mfifo * res = creation_mfifo_nomme( name, capacite, permission);
-					printf("fin create\n");
+					//printf("fin create\n");
 					if( res == NULL){
-						printf("echec de création \n");
+						//printf("echec de création \n");
 						return NULL;
 					}
 					return res;
@@ -115,18 +115,18 @@ mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 		exit(1);
 	}
     close(fd);
-	printf("Dans 0 , adresse du fifo : %p\nReturn Fifo.\n", res );
-	printf("Contenu memoire a la connexion : %s\n", res->memory );
+	printf("Connexion Fifo | adresse du fifo : %p\n", res );
+	//printf("Contenu memoire a la connexion : %s\n", res->memory );
     fill_mfifo(res,(size_t) res , capacite);
-   	printf("Contenu memoire a la connexion : %s\n", res->memory );
+   	printf("Connexion Fifo | Contenu memoire a la connexion : %s\n", res->memory );
 
     return res;
 }
 
 mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
-	printf("dans creation nomme\n");
+	printf("Creation Fifo | dans creation nomme\n");
 	mfifo * res = malloc(sizeof(mfifo)+capacite);
-	printf("malloc\n");	
+	//printf("malloc\n");	
 	int fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );
 	if(fd == -1){
 		perror("shm open ");
@@ -137,12 +137,12 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 		perror(" fstat ");
     	exit(1);
 	}
-	printf("stat\n");
+	//printf("stat\n");
 	if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
 		perror("Ftruncate");
 		exit(1);
 	}
-	printf("truncate\n");
+	//printf("truncate\n");
   	res = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 	if( res == MAP_FAILED){
 	    //mfifo_unlink(name);
@@ -150,7 +150,7 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 	    exit(1);
   	}
 	close(fd);
-	printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &res[0] );
+	printf("Creation Fifo | Dans create fifo_Vide , adresse du fifo : %p\n", &res[0] );
 	fill_mfifo(res,(size_t) res , capacite);
 	init_memory_mfifo(res);
 
@@ -165,14 +165,14 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 * @param capacite 	capacité totale de fifo
 */
 void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
-	printf("%d\n",capacite );
+	//printf("%d\n",capacite );
 	//realloc(fifo, sizeof(mfifo)+capacite);
 	fifo->debut = addr ;
 	fifo->fin = fifo->debut + capacite ;
 	fifo->capacity = capacite;
 	fifo->pid = -1 ;
 	//*fifo->memory = addr ;
-	printf("fill_fifo : memory : %s\n", fifo->memory );
+	//printf("fill_fifo : memory : %s\n", fifo->memory );
 
 	//*(fifo->memory) = &addr ;
 	if(sem_init(&fifo->sem,1,1) == -1 ){
@@ -196,45 +196,34 @@ void init_memory_mfifo(mfifo * fifo){
 	len octets dans fifo.
 	*/
 int mfifo_write(mfifo *fifo, const void *val, size_t len){
+	printf("Write | val : : %s \n", val );
 	size_t cpt = mfifo_free_memory(fifo);
 	// On test que LEN est bien < fifo->capacite .
-
-	message * res = malloc(sizeof(message));
-	create_message(val,res);
-
-	printf("Dans mfifo Write Len = %d et strlen de val : %d \n", len ,strlen(val) );
-	printf("Et fifo->capicite = %d \n", fifo->capacity );
-
 	if ( len > fifo->capacity || cpt < len ){
 		perror("Erreur , Len > fifo->capacite\n");
 		printf("len : %d, fifo->capacity : %d, cpt : %d \n",len,fifo->capacity, cpt );
 		errno = EMSGSIZE;
 		return -1;
 	}
-<<<<<<< HEAD
 
+	message * m = val ;
 
-	int l = res->l ;
-	printf("Content message a ecrire : %s De taille : %d  \n", &res->mes[0] , l);
+	printf("Write | Len du message : %d \n", m->l);
+	printf("Write | Content du message : %s \n", m->mes );
+	
 
-	char * content = malloc(8);
+	char * bufLen = malloc(8);
 
-	sprintf(content, "%d", l);
+	sprintf(bufLen, "%d", m->l);
 
-	memcpy(&fifo->memory[0], content, 8 );
-
-	memcpy(&fifo->memory[7], &res->mes[0], l );
-
-=======
-	//memcpy(&fifo->memory[0] , val , len) ;
-	for ( int i = 0 ; i < len ; i++ ){
-		memcpy(&fifo->memory[i] , &val[i] , 1 ) ; 
+	//printf("Content Ecrit dans fifo : \n > ") ;
+	/*
+	for ( int i = 0 ; i < m->l + 8 ; i++ ) {
+		printf("%s", (char*)&m[i] );
 	}
-	//snprintf(fifo->memory, strlen(fifo->memory, "%d %s\n", last_idx, val);
-	//snprintf(fifo->memory+strlen(fifo->memory), 0, "%s", val);
-    printf("Content : %s a l'adresse : %p \n",fifo->memory, fifo->memory );
-    msync(fifo,fifo->capacity,MS_SYNC);
->>>>>>> lecture
+	*/
+	memcpy(&fifo->memory[0] , bufLen , 8) ;
+	memcpy(&fifo->memory[7] , m->mes , m->l ) ;
 	return len;
 }
 
@@ -248,42 +237,23 @@ lit donc un segment contigu d’octets stockés dans le mfifo.
 */
 
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
-	if( len > fifo->capacity - mfifo_free_memory(fifo)){
-		/* on veut lire plus d'octet qu'il n'en est contenu dans fifo */
-		printf("on veut lire plus d'octet qu'il n'en est contenu dans fifo\n" );
-	}
-<<<<<<< HEAD
-	*/
-	int fd = shm_open(fifo->nom, O_RDWR, 0777);
-	if( fd == -1 ){
-		perror("shm open ");
-		return -1;
-	}
-	struct stat buf_stat;
-	if (fstat(fd, &buf_stat) == -1) {
-		perror(" fstat ");
-    	exit(1);
-	}
-
-	int count = read(fd,buf,len) ;
-	//printf("%s\n", buf);
 	/*
-
-
-	//printf("Buf : %s\n", buf );
-	memset(fifo->memory,0,len);
-	// inserer ICI la fonction de decalage de memoire
-	printf("\nContent restant dans Fifo->memory : %s\n", &fifo->memory[len]);
-
-	mfifo_unlock(fifo);
+	if( len > fifo->capacity - mfifo_free_memory(fifo)){
+		printf("on veut lire plus d'octet qu'il n'en est contenu dans fifo\n" );
+		printf("Len : %d et Capa_Libre : %d \n", len , fifo->capacity - mfifo_free_memory(fifo) );
+	}
 	*/
-    return count;
+	
+	printf("Read | Capacity de fifo dans READ : %d  et LEN : %d \n" , fifo->capacity , len );
+	char * tmp = malloc(8) ;
+	memcpy(tmp , &fifo->memory[0] , 8) ;
+	int LenTmp = atoi(tmp);
 
-=======
-	realloc(buf, sizeof(char)*len);
-	snprintf(buf, len, "%s", fifo->memory);
-	printf("buf : %s\n",buf );
->>>>>>> lecture
+	printf("Read | nb octets a lire , d'apres l'en-tete : %d\n", LenTmp );
+
+	memcpy(buf , &fifo->memory[7] , LenTmp );
+	//snprintf(buf, len, "%s", fifo->memory);
+	//printf("buf : %s\n",buf );
 }
 
 
@@ -348,7 +318,7 @@ size_t mfifo_capacity(mfifo *fifo){
 * @return 	renvoie la taille du fifo apres libération de mémoire
 */
 int free_mfifo(mfifo *fifo){
-	printf("dans free mfifo\n");
+	//printf("dans free mfifo\n");
 	free(&fifo->nom);
 	if( strlen(fifo->memory) !=0 ){
 		free(fifo->memory);
@@ -392,7 +362,7 @@ int mfifo_disconnect(mfifo *fifo){
 * @return 		retourne -1 en cas d'erreur sinon 0
 */
 int mfifo_unlink(const char * nom){
-	printf("dans unlink : nom := %s \n",nom );
+	//printf("dans unlink : nom := %s \n",nom );
 	int r = shm_unlink(nom);
 	if( r == -1){
 		perror("shm unlink");
@@ -417,6 +387,5 @@ void create_message(char * buf, message * res){
 	//printf("mem : %s\n", res->mes);
 	//printf("l %ld\n",strlen(res->l) );
 	//printf("l : %ld + contenu : %ld = %ld\n",sizeof(res->l), res->l, sizeof(res) );
-	printf("Create Message : %s \n",  res->mes );
 	//return res;
 }
