@@ -254,7 +254,9 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 
 	printf("Read | nb octets a lire , d'apres l'en-tete : %d\n", LenTmp );
 
-	memcpy(buf , &fifo->memory[7] , LenTmp );
+	memcpy(buf , &fifo->memory[8] , LenTmp );
+
+	printf("Read | buf : %s\n", buf );
 	
 	//snprintf(buf, len, "%s", fifo->memory);
 	//printf("buf : %s\n",buf );

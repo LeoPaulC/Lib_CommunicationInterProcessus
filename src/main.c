@@ -22,7 +22,7 @@ int main(void)
 	printf("fifo cap main %s\n",fifo->memory );
 
 	buf = malloc(m->l+sizeof(message)+1) ;
-	//printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \n\tBuf : %s \n", buf  );
+	printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \n\tBuf : %s \n", buf  );
 
 // Len definie temporairement pour nos test
 	size_t resRead = mfifo_read(fifo, buf, sizeof(message)-1) ;
