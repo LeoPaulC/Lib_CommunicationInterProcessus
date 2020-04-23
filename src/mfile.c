@@ -19,7 +19,7 @@ void Init(void)
 	printf("Projet System 2020 , TRAORE - CADIOU :\n\n");
 }
 
-mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t capacite ){
+mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t capacite ){
 
 	if ( !capacite || capacite == 0 ){
 		perror("Capacité NULL ou = 0 , Erreur");
@@ -48,79 +48,45 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		switch(options){
 			case 0 :
 				printf("\nCONNEXION ....\n");
-				if(connexion_mfifo_nomme(name, capacite, permission, fifo) == -1){
-					printf("echec de connexion \n");
-					return NULL;
+				if( permission !=0){
+					mfifo * res = connexion_mfifo_nomme(name, capacite, permission); 
+					if(  res == NULL){
+						printf("echec de connexion \n");
+						return NULL;
+					}
+					printf("Contenu memoire au retour de conecxion nomme  : %s\n", res->memory );
+					return res ;
 				}
-				return fifo ;
+				break;
 
 			case O_CREAT :
+			
 				if ( permission != 0  ){
-					fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );// cree avec permission
-					if ( fd != -1 ){
-						//void *addr = mmap(NULL, capacite , PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-						
-						struct stat buf_stat;
-						if (fstat(fd, &buf_stat) == -1) {
-		    	    		perror(" fstat ");
-		    	        	exit(1);
-		    	    	}
-						if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
-							perror("Ftruncate");
-							exit(1);
-		  				}
-
-					  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-						if( fifo == MAP_FAILED){
-						    //mfifo_unlink(name);
-						    perror("O_CREAT - mmap");
-						    exit(1);
-					  	}
-		    			close(fd);
-						printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
-		    			fill_mfifo(fifo,(size_t) fifo , capacite);
-		    			init_memory_mfifo(fifo);
-    					return fifo ;
-		    		}
-		    		else{		    			
-		    			printf("Dans O_create ( fifo existe deja ) \n");
-		    			if(connexion_mfifo_nomme(name, capacite, permission, fifo) == -1){
-		    				printf("echec de connexion \n");
+					mfifo * res = creation_mfifo_nomme( name, capacite, permission);
+					if( res == NULL){
+						res = connexion_mfifo_nomme(name, capacite, permission);
+						if( res == NULL ){
+							printf("echec de conne\n");
 							return NULL;
 						}
-    					return fifo ;
-		    		}
-				}				
+					}
+					return res;
+				}					
 				break;
 
 			case O_CREAT|O_EXCL :
-				
-				fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );
-				if(fd == -1){
-					perror(" ocreate oexcl : mfifo_connect() echoue car l'objet existe deja .\n");
-					return NULL;
-				}
-				struct stat buf_stat;
-				if (fstat(fd, &buf_stat) == -1) {
-    	    		perror(" fstat ");
-    	        	exit(1);
-    	    	}
-				if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
-					perror("Ftruncate");
-					exit(1);
-  				}
 
-			  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-				if( fifo == MAP_FAILED){
-				    //mfifo_unlink(name);
-				    perror("O_CREAT - mmap");
-				    exit(1);
-			  	}
-    			close(fd);
-				printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
-    			fill_mfifo(fifo,(size_t) fifo , capacite);
-    			init_memory_mfifo(fifo);
-				return fifo ;	
+				if( permission != 0){
+					printf("excl\n");
+					mfifo * res = creation_mfifo_nomme( name, capacite, permission);
+					printf("fin create\n");
+					if( res == NULL){
+						printf("echec de création \n");
+						return NULL;
+					}
+					return res;
+				}
+				break;
 		}
 	}
 	return fifo ;
@@ -130,28 +96,65 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 * Gère la connexion d'un mfifo nommé
 *
 */
-int connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission, mfifo * fifo){
+mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
+	mfifo * res = malloc(sizeof(mfifo)+capacite);
 	int fd = shm_open(name, O_RDWR, permission);
 	if( fd == -1 ){
 		perror("shm open ");
-		return -1;
+		exit(1);
 	}
 	struct stat buf_stat;
 	if (fstat(fd, &buf_stat) == -1) {
     	perror(" fstat ");
-    	return -1;
+    	exit(1);
     }
-	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-	if( fifo == MAP_FAILED){
+	res = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	if( res == MAP_FAILED){
 		//mfifo_unlink(name);
 		perror("O - mmap");
-		return -1;
+		exit(1);
 	}
     close(fd);
-	printf("Dans 0 , adresse du fifo : %p\nReturn Fifo.\n", fifo );
-	printf("Contenu memoire a la connexion : %s\n", fifo->memory );
-    fill_mfifo(fifo,(size_t) fifo , capacite);
-    return 0;
+	printf("Dans 0 , adresse du fifo : %p\nReturn Fifo.\n", res );
+	printf("Contenu memoire a la connexion : %s\n", res->memory );
+    fill_mfifo(res,(size_t) res , capacite);
+   	printf("Contenu memoire a la connexion : %s\n", res->memory );
+
+    return res;
+}
+
+mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
+	printf("dans creation nomme\n");
+	mfifo * res = malloc(sizeof(mfifo)+capacite);
+	printf("malloc\n");	
+	int fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );
+	if(fd == -1){
+		perror("shm open ");
+		return NULL;
+	}
+	struct stat buf_stat;
+	if (fstat(fd, &buf_stat) == -1) {
+		perror(" fstat ");
+    	exit(1);
+	}
+	printf("stat\n");
+	if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
+		perror("Ftruncate");
+		exit(1);
+	}
+	printf("truncate\n");
+  	res = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+	if( res == MAP_FAILED){
+	    //mfifo_unlink(name);
+	    perror("O_CREAT - mmap");
+	    exit(1);
+  	}
+	close(fd);
+	printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &res[0] );
+	fill_mfifo(res,(size_t) res , capacite);
+	init_memory_mfifo(res);
+
+	return res;
 }
 
 /**
@@ -163,12 +166,13 @@ int connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission, mfifo
 */
 void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
 	printf("%d\n",capacite );
+	//realloc(fifo, sizeof(mfifo)+capacite);
 	fifo->debut = addr ;
 	fifo->fin = fifo->debut + capacite ;
 	fifo->capacity = capacite;
 	fifo->pid = -1 ;
 	//*fifo->memory = addr ;
-	printf("fill_fifo : memory : %p\n", fifo->memory );
+	printf("fill_fifo : memory : %s\n", fifo->memory );
 
 	//*(fifo->memory) = &addr ;
 	if(sem_init(&fifo->sem,1,1) == -1 ){
@@ -207,6 +211,7 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 		errno = EMSGSIZE;
 		return -1;
 	}
+<<<<<<< HEAD
 
 
 	int l = res->l ;
@@ -220,6 +225,16 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 
 	memcpy(&fifo->memory[7], &res->mes[0], l );
 
+=======
+	//memcpy(&fifo->memory[0] , val , len) ;
+	for ( int i = 0 ; i < len ; i++ ){
+		memcpy(&fifo->memory[i] , &val[i] , 1 ) ; 
+	}
+	//snprintf(fifo->memory, strlen(fifo->memory, "%d %s\n", last_idx, val);
+	//snprintf(fifo->memory+strlen(fifo->memory), 0, "%s", val);
+    printf("Content : %s a l'adresse : %p \n",fifo->memory, fifo->memory );
+    msync(fifo,fifo->capacity,MS_SYNC);
+>>>>>>> lecture
 	return len;
 }
 
@@ -231,16 +246,13 @@ S’il y plusieurs processus lecteurs qui tentent de lire en même temps, tous s
 bloqués en attendant la fin de la lecture du seul processus autorisé à lire. Chaque lecture
 lit donc un segment contigu d’octets stockés dans le mfifo.
 */
+
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
-	//printf("Read à : %p\n",fifo->memory );
-	//memcpy(buf,fifo->memory,len);
-	//printf("Buf : %s\n", buf );
-	printf("En Lecture : \n> ");
-	/*
-	for ( int i = 0 ; i < (int)len ; i++ ){
-		memcpy( buf+i, &fifo->memory[i] , 1 );
-		count++ ;
+	if( len > fifo->capacity - mfifo_free_memory(fifo)){
+		/* on veut lire plus d'octet qu'il n'en est contenu dans fifo */
+		printf("on veut lire plus d'octet qu'il n'en est contenu dans fifo\n" );
 	}
+<<<<<<< HEAD
 	*/
 	int fd = shm_open(fifo->nom, O_RDWR, 0777);
 	if( fd == -1 ){
@@ -267,7 +279,13 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	*/
     return count;
 
+=======
+	realloc(buf, sizeof(char)*len);
+	snprintf(buf, len, "%s", fifo->memory);
+	printf("buf : %s\n",buf );
+>>>>>>> lecture
 }
+
 
 /**
 * Verrouille le mfifo pour la lecture, fonction bloquante, attend tend que 
