@@ -37,7 +37,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
             perror("mmap");
            	return NULL;
         }
-		fill_mfifo(fifo,(size_t) addr, capacite);
+		fill_mfifo(fifo,(size_t) addr, capacite,NULL);
 	    return fifo ;
 	}
 	if ( nom != NULL ){
@@ -117,7 +117,7 @@ mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
     close(fd);
 	printf("Connexion Fifo | adresse du fifo : %p\n", res );
 	//printf("Contenu memoire a la connexion : %s\n", res->memory );
-    fill_mfifo(res,(size_t) res , capacite);
+    fill_mfifo(res,(size_t) res , capacite, name);
    	printf("Connexion Fifo | Contenu memoire a la connexion : %s\n", res->memory );
 
     return res;
@@ -151,7 +151,7 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
   	}
 	close(fd);
 	printf("Creation Fifo | Dans create fifo_Vide , adresse du fifo : %p\n", &res[0] );
-	fill_mfifo(res,(size_t) res , capacite);
+	fill_mfifo(res,(size_t) res , capacite,name);
 	init_memory_mfifo(res);
 
 	return res;
@@ -164,19 +164,22 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 * @param addr 		adresse de début de fifo
 * @param capacite 	capacité totale de fifo
 */
-void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite){
-	//printf("%d\n",capacite );
-	//realloc(fifo, sizeof(mfifo)+capacite);
+void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
+	
+	if(name == NULL){
+		fifo->nom = NULL;
+	}else{
+		fifo->nom = malloc(strlen(name));
+		memcpy(fifo->nom, name, strlen(name));
+	}
+
 	fifo->debut = addr ;
 	fifo->fin = fifo->debut + capacite ;
 	fifo->capacity = capacite;
 	fifo->pid = -1 ;
-	//*fifo->memory = addr ;
-	//printf("fill_fifo : memory : %s\n", fifo->memory );
 
-	//*(fifo->memory) = &addr ;
 	if(sem_init(&fifo->sem,1,1) == -1 ){
-		perror("sem init 210 ");
+		perror("sem init ");
 	}
 }
 
@@ -223,7 +226,7 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	}
 	*/
 	memcpy(&fifo->memory[0] , bufLen , 8) ;
-	memcpy(&fifo->memory[7] , m->mes , m->l ) ;
+	memcpy(&fifo->memory[8] , m->mes , m->l ) ;
 	return len;
 }
 
@@ -252,6 +255,7 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	printf("Read | nb octets a lire , d'apres l'en-tete : %d\n", LenTmp );
 
 	memcpy(buf , &fifo->memory[7] , LenTmp );
+	
 	//snprintf(buf, len, "%s", fifo->memory);
 	//printf("buf : %s\n",buf );
 }
@@ -337,6 +341,9 @@ int free_mfifo(mfifo *fifo){
 * @return 		renvoie la quantité de mmémoire libre de fifo
 */
 size_t mfifo_free_memory(mfifo *fifo){
+	/* TODO */
+	printf("mfifo_free_memory\n");
+
 	return (fifo->capacity - strlen(fifo->memory) );
 }
 

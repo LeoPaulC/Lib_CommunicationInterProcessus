@@ -11,8 +11,7 @@ int main(void)
 	Init();
 	printf("------ Creation PUIS Connexion : -------\n");
 	
-	mfifo * fifo = mfifo_connect("testBis",O_CREAT|O_EXCL,0777,LEN);
-
+	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
 	char* buf = "Nous avons enfin un test concluant Chef :)" ;
 
 	message * m = malloc(sizeof(message) + strlen(buf)+1) ;
@@ -20,13 +19,13 @@ int main(void)
 	create_message(buf,m) ;
 
 	int r = mfifo_write(fifo,m,m->l+sizeof(message)+1);
-	//printf("fifo cap main %s\n",fifo->memory );
+	printf("fifo cap main %s\n",fifo->memory );
 
 	buf = malloc(m->l+sizeof(message)+1) ;
-	printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \n\tBuf : %s \n", buf  );
+	//printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \n\tBuf : %s \n", buf  );
 
 // Len definie temporairement pour nos test
-	size_t resRead = mfifo_read(fifo, buf, m->l+sizeof(message)+1) ;
+	size_t resRead = mfifo_read(fifo, buf, sizeof(message)-1) ;
 
 	printf("Main | Au Retour du Read , Buf : %s \n" , buf );
 	
@@ -58,12 +57,8 @@ int main(void)
 		printf("\n\n------------ Pere ---------------\n");
 		mfifo * fifo_pere= mfifo_connect("testBis",O_CREAT,0777,LEN);
 		
-		mfifo_disconnect("testBis");
-		mfifo_unlink("testBis");
-		
-		//printf("Etat apres suppression\n" );
-		//printf("Contenu du dossier /dev/shm/ : \n" );
-		//execlp("ls","ls","/dev/shm/",NULL);
+		//mfifo_disconnect("testBis");
+		//mfifo_unlink("testBis");
 
 	}
 	return EXIT_SUCCESS;
