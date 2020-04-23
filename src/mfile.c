@@ -92,39 +92,35 @@ mfifo *mfifo_connect( const char *nom, int options, mode_t permission, size_t ca
 		    		}
 				}				
 				break;
-			case O_CREAT|O_EXCL :
-				fd = shm_open(name, O_RDWR, 0);
-				if ( fd != -1 ){ // mfifo existe deja donc Connect() doit echouer
-					perror("mfifo_connect() echoue car l'objet existe deja .\n");
-					break;
-				}
-				else{
-					fd = shm_open(name, O_CREAT | O_EXCL, permission );
-					if(fd == -1){
-						return NULL;
-					}
-					struct stat buf_stat;
-					if (fstat(fd, &buf_stat) == -1) {
-	    	    		perror(" fstat ");
-	    	        	exit(1);
-	    	    	}
-					if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
-						perror("Ftruncate");
-						exit(1);
-	  				}
 
-				  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-					if( fifo == MAP_FAILED){
-					    //mfifo_unlink(name);
-					    perror("O_CREAT - mmap");
-					    exit(1);
-				  	}
-	    			close(fd);
-					printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
-	    			fill_mfifo(fifo,(size_t) fifo , capacite);
-	    			init_memory_mfifo(fifo);
-					return fifo ;
+			case O_CREAT|O_EXCL :
+				
+				fd = shm_open(name, O_CREAT | O_RDWR | O_EXCL, permission );
+				if(fd == -1){
+					perror(" ocreate oexcl : mfifo_connect() echoue car l'objet existe deja .\n");
+					return NULL;
 				}
+				struct stat buf_stat;
+				if (fstat(fd, &buf_stat) == -1) {
+    	    		perror(" fstat ");
+    	        	exit(1);
+    	    	}
+				if( buf_stat.st_size == 0 && ftruncate( fd, capacite ) == -1){
+					perror("Ftruncate");
+					exit(1);
+  				}
+
+			  	fifo = mmap(NULL, capacite, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+				if( fifo == MAP_FAILED){
+				    //mfifo_unlink(name);
+				    perror("O_CREAT - mmap");
+				    exit(1);
+			  	}
+    			close(fd);
+				printf("Dans O_create fifo_Vide , adresse du fifo : %p\nReturn Fifo.\n", &fifo[0] );
+    			fill_mfifo(fifo,(size_t) fifo , capacite);
+    			init_memory_mfifo(fifo);
+				return fifo ;	
 		}
 	}
 	return fifo ;
