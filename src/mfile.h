@@ -61,7 +61,8 @@ void init_memory_mfifo(mfifo * fifo);
 int free_mfifo(mfifo *fifo);
 
 void create_message(char * buf, message * res);
-
+mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission);
+mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission);
 
 #endif
 					

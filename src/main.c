@@ -11,19 +11,17 @@ int main(void)
 	Init();
 	printf("------ Creation PUIS Connexion : -------\n");
 	
-	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
+	mfifo * fifo = mfifo_connect("testBis",O_CREAT|O_EXCL,0777,LEN);
 
 	char* buf = "Nous avons enfin un test concluant Chef :)" ;
 	int r = mfifo_write(fifo,buf,(strlen(buf)));
-	printf("fifo cap main %s\n",fifo->memory );
-	message * res = malloc(sizeof(message));
-	create_message(buf,res);
-	printf("taille message %ld\n",sizeof(res)+res->l+1 );
-	printf("affchage message :\n");
-	printf("longueur :%ld\n", res->l );
-	printf("contenu :%s\n", res->mes );
-	printf("ecriture du message\n" );		
+	//printf("fifo cap main %s\n",fifo->memory );
+	
 	int status = 0 ;
+
+	printf("main cap %ld\n", fifo->capacity );
+	printf("main memory %s\n", fifo->memory );
+
 	pid_t pid = fork();
 
 	if ( pid == 0 ) {
