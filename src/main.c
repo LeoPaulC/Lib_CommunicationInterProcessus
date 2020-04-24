@@ -4,7 +4,7 @@
 #include <string.h>
 #include "mfile.h"
 
-#define LEN 150
+#define LEN 200
 
 int main(void)
 {
@@ -35,13 +35,15 @@ int main(void)
 	
 
 	buf = malloc(m->l+sizeof(message)+1) ;
-	printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \n\tBuf : %s \n", buf  );
+	printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \nMain | Buf : %s \n", buf  );
 
 // Len definie temporairement pour nos test
-	size_t resRead = mfifo_read_message(fifo, buf, 0 ) ; // la taille n'importeplus grace au systeme de message
-	printf("Main | A la sortie de la Lecture nous avons : %s \n", buf );
-	printf("Main | et le contenue de fifo est maintenant : \n>%s\n" , &fifo->memory[0] );
 
+	size_t resRead = mfifo_read_message(fifo, buf, 0 ) ; // la taille n'importeplus grace au systeme de message
+
+	printf("Main | A la sortie de la Lecture de Message nous avons : %s \n", &buf[0] );
+	printf("Main | et le contenue de fifo est maintenant : \n> " );
+	print_fifo_memory(fifo) ;
 	printf("Main | Au Retour du Read , Buf : %s \n" , buf );
 	
 	int status = 0 ;

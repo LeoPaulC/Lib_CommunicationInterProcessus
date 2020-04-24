@@ -233,7 +233,10 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 		errno = EMSGSIZE;
 		return -1;
 	}
-	int dispo = mfifo_free_memory(fifo) ;
+	int dispo = fifo->capacity - mfifo_free_memory(fifo) ;
+
+	printf("Write | dispo : %d \n", dispo );
+
 	while ( len > dispo ){
 		printf("Write | On attend que de la palce se libere pour ecrire dans le fifo.\n");
 		dispo = mfifo_free_memory(fifo) ;
@@ -242,17 +245,19 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	printf("Write | Len du message : %d \n", m->l);
 	printf("Write | Content du message : %s \n", m->mes );
 
-	size_t index = fifo->capacity - dispo ;
+	int index = fifo->capacity - dispo ;
 	
-	printf("Write | On va ecrire a l'octets n° %d dans le fifo .\n", index );
+	printf("Write | On va ecrire a l'octets n° %ld dans le fifo .\n", fifo->capacity - dispo );
 
 	char * bufLen = malloc(8);
 
 	sprintf(bufLen, "%d", m->l);
 
-	memcpy(&fifo->memory[index] , bufLen , 8) ;
-	memcpy(&fifo->memory[index+8] , m->mes , m->l ) ;
+	memcpy(&fifo->memory[fifo->capacity-dispo] , bufLen , 8) ;
+	memcpy(&fifo->memory[fifo->capacity-dispo+8] , m->mes , m->l ) ;
 
+	printf("Write | memory[%d] : %s \n", fifo->capacity - dispo,&fifo->memory[fifo->capacity-dispo]);
+	printf("Write | memory[%d] : %s \n", fifo->capacity - dispo +8 ,&fifo->memory[fifo->capacity-dispo+8]);
 	return 0;
 }
 
@@ -264,38 +269,62 @@ S’il y plusieurs processus lecteurs qui tentent de lire en même temps, tous s
 bloqués en attendant la fin de la lecture du seul processus autorisé à lire. Chaque lecture
 lit donc un segment contigu d’octets stockés dans le mfifo.
 */
+
+/*
+Permet la lecture par message .
+*/ 
 size_t mfifo_read_message(mfifo *fifo, void *buf, size_t len) {
 	// on bloque le fifo
 	mfifo_lock(fifo) ;
 
 	message *ps = malloc( sizeof( message) );
+
 	mfifo_read(fifo, ps, sizeof(message)); /* lire sans tableau mes[] */
 
 	ps = realloc( ps, ps->l + sizeof(message) ); /* agrandir la mémoire pour le tableau */
 
-	mfifo_read(fifo, ps->mes , ps->l ); /* lire le message lui même */
+	ps->l = mfifo_read(fifo, ps , ps->l ); /* lire le message lui même */
+	//printf("Read 2 passe \n");
 
 	printf("Read | Len message : %d , content message : %s \n", ps->l , ps->mes );
 
+	memcpy(buf,ps->mes,ps->l) ;
+
+	printf("Buf : %s \n", buf  );
+
 	mfifo_unlock(fifo); // on debloque
+
+}
+print_fifo_memory(mfifo * fifo ){
+	for ( int i = 0 ; i < fifo->capacity ; i++ ){
+		int jmp = strlen(&fifo->memory[i]) ;
+		printf("%s", &fifo->memory[i] );
+		i += jmp ;
+	}
+	printf("\n");
 }
 
+/*
+Permet une lecture ( 2 appel necessaire pour lire un message )
+*/
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	
-	char * tmp = malloc(len) ;
-	memcpy(tmp , &fifo->memory[0] , len) ;
-	printf("Read | mem : %s \n", &fifo->memory[0] );
-	int LenTmp = atoi(tmp);
-
-	message * ps = buf ;
-	memcpy(ps,&fifo->memory[0],len);
-	if ( atoi(&fifo->memory[0]) ) 
-		ps->l = atoi(&fifo->memory[0])	 ;
-
-	printf("Ps : %s , %d\n", ps ,len  );
-
-	memcpy(&fifo->memory[0] , &fifo->memory[len] , fifo->capacity-len ) ;
-	
+	memcpy(buf , &fifo->memory[0] , len ) ;
+	if ( atoi(buf) > 0 ){
+		message * ms = buf ;
+		ms->l = atoi(buf) ;
+		printf("Read | taille du message a suivre : %d \n", ms->l );
+		//printf("\nOn a fixé la taille du message à ms->l : %d \n", ms->l );
+		memcpy(&fifo->memory[0] , &fifo->memory[len] , fifo->capacity ) ;
+		//printf("decalage passe de %d octets \n" , len );
+	}
+	else{
+		message * ms = buf ;
+		memcpy(&ms->mes[0] , &fifo->memory[0] , len ) ;
+		printf("Read | Content du message : %s  \n", ms->mes );
+		memcpy(&fifo->memory[0] , &fifo->memory[len] , fifo->capacity) ;
+		//printf("decalage passe de %d octets \n" , len );
+	}
 	return len ;
 
 }
@@ -382,18 +411,28 @@ int free_mfifo(mfifo *fifo){
 */
 size_t mfifo_free_memory(mfifo *fifo){
 	/* TODO */
-	size_t occupe = 0 ;
-	size_t libre = fifo->capacity ;
-	for ( int i = 0 ;  i < (int)fifo->capacity ; i++ ){
+	int occupe = 0 ;
+	int libre = fifo->capacity ;
+	int cpt = 0 ;
+	for ( int i = 0 ;  i < (int)fifo->capacity ; i++ )
+	{
 		char * tmp = malloc(8) ;
 		memcpy(tmp , &fifo->memory[i] , 8) ;
 		int LenTmp = atoi(tmp);
-		occupe += LenTmp ;
-		i = i + LenTmp ;
+		if ( LenTmp > 0 ) {
+			occupe = occupe + LenTmp  ;
+			cpt++ ;
+			i = i + LenTmp ;
+			continue ;
+		}
 	}
-	//printf("mfifo_free_memory , place restante : %d \n" , libre );
+	printf("mfifo_free_memory , place restante : %d \n" , occupe );
+	if ( occupe ==  0)
+		return fifo->capacity ;
 
-	return (libre-occupe) ;
+	//occupe = occupe + (cpt*8) ;
+
+	return ( occupe + (cpt*8 ) ) ;
 }
 
 /**
