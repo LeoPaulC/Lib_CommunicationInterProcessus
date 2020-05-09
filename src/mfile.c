@@ -43,13 +43,18 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 	}
 	else {
 		/* mFifo anonyme */
-		void * addr = mmap(NULL, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-		if (addr == MAP_FAILED){
-            perror("mmap");
-           	return NULL;
-        }
-		fill_mfifo(fifo,(size_t) addr, capacite,NULL);
-	    return fifo ;
+		//void * addr = mmap(NULL, capacite, PROT_READ | PROT_WRITE,  MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+		mfifo * res = malloc(sizeof(mfifo)+capacite);
+		res = mmap(NULL, capacite, PROT_READ | PROT_WRITE,  MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+		if( res == MAP_FAILED){
+			//mfifo_unlink(name);
+			perror("O - mmap");
+			exit(1);
+		}
+		//printf("Creation fifo anonyme | adresse du fifo : %p\n",  res );
+		fill_mfifo(res,(size_t) res , capacite, NULL);
+		//printf("Creation anonyme : capa = %d \n", res->capacity );
+	    return res ;
 	}
 	if ( nom != NULL ){
 		char * name = malloc(sizeof(char)*(sizeof(nom)+2));
@@ -260,6 +265,10 @@ int mfifo_trywrite(mfifo *fifo, const void *val, size_t len){
 		printf("%c", fifo->memory[i]);
 	}
 	printf("'\n");
+	if ( fifo->nom == NULL ){
+		int resu = msync(fifo, fifo->capacity, MS_SYNC); 
+		printf("Synchronisation memoire try_write : %d \n" , resu );
+	}
 	return 0;
 }
 	
@@ -284,6 +293,11 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 		printf("%c", fifo->memory[i]);
 	}
 	printf("'\n\n");
+
+	if ( fifo->nom == NULL ){
+		int resu = msync(fifo, fifo->capacity, MS_SYNC); 
+		printf("Synchronisation memoire write : %d \n" , resu );
+	}
 	
 	return 0;
 }
@@ -341,7 +355,12 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 		fifo->pid = getpid() ;
 		printf("\nLe verrou de lecture est detenu par le processus n° %d\n", fifo->pid );
 	} 
+	if ( fifo->nom == NULL ){
+		int resu = msync(fifo, fifo->capacity, MS_ASYNC); 
+		printf("Synchronisation memoire read : %d \n" , resu );
+	}
 	size_t dispo  = mfifo_free_memory(fifo) ;
+	printf("Read : %ld \n", dispo );
 	if ( dispo == fifo->capacity){
 		printf("Read | Le fifo est vide. Rien a lire .\n");
 		return 0 ;
