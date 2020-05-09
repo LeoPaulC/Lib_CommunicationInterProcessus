@@ -111,7 +111,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 * Gère la connexion d'un mfifo nommé
 *
 */
-static mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
+mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 	mfifo * res = malloc(sizeof(mfifo)+capacite);
 	int fd = shm_open(name, O_RDWR, permission);
 	if( fd == -1 ){
@@ -135,7 +135,7 @@ static mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permis
    	return res;
 }
 
-static mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
+mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 	//printf("Creation Fifo.\n");
 	mfifo * res = malloc(sizeof(mfifo)+capacite);
 	//printf("malloc\n");	
@@ -176,7 +176,7 @@ static mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permiss
 * @param addr 		adresse de début de fifo
 * @param capacite 	capacité totale de fifo
 */
-static void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
+void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
 	
 	if(name == NULL){
 		fifo->nom = NULL;
@@ -200,7 +200,7 @@ static void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
 *
 * @param fifo objet fifo dont il faut initialiser la memoire
 */
-static void init_memory_mfifo(mfifo * fifo){
+void init_memory_mfifo(mfifo * fifo){
 	memset(fifo->memory, 0, fifo->capacity);
 }
 
@@ -360,7 +360,6 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 		//printf("Synchronisation memoire read : %d \n" , resu );
 	}
 	size_t dispo  = mfifo_free_memory(fifo) ;
-	//printf("Read : %ld \n", dispo );
 
 	if ( dispo == fifo->capacity){
 		printf("Read | Le fifo est vide. Rien a lire .\n");
@@ -373,6 +372,8 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 	}
 	memcpy(buf , &fifo->memory[0] , len) ;
 	memmove(&fifo->memory[0] , &fifo->memory[len] , fifo->capacity ) ;
+
+	printf("PID : %d , Read : '%s' \n", getpid() , (char*)buf );
 
 	if ( mfifo_unlock(fifo) == 0 ) // on debloque
 	{
@@ -515,7 +516,7 @@ int mfifo_unlink(const char * nom){
 *
 * @param buf contenu du message à créer
 */
-static void create_message(char * buf, message * res){
+void create_message(char * buf, message * res){
 	int taille = sizeof(message)+strlen(buf)+1;
 	res = realloc(res,taille);
 	res->l = strlen(buf)+1;

@@ -10,6 +10,7 @@
 int main(void)
 {
 	Init();
+	printf("Nous allons travailler avec des mfifo de taille : %d\n", LEN );
 	//printf("------ Creation PUIS Connexion : -------\n");
 	
 	//mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
@@ -47,7 +48,7 @@ int main(void)
 		printf("\nOn va lire un message de taille : %ld dans le fifoAnonyme.\n", ps->l );
 		mfifo_read(fifoAnonyme, ps->mes , ps->l-1 );
 		print_fifo_memory(fifoAnonyme);
-		printf("\nProcessus : %d | Message lu : '%s'\n", getpid() , ps->mes  );	
+		//printf("\nProcessus : %d | Message lu : '%s'\n", getpid() , ps->mes  );	
 		mfifo_disconnect(fifoAnonyme);
 	}
 	printf("\n------------------------------------------------------------------------------------");
@@ -86,7 +87,7 @@ int main(void)
 		ps = realloc( ps, ps->l + sizeof(message) );
 		//printf("On va lire un message de taille : %d \n", ps->l );
 		mfifo_read(fifo_pere, ps->mes , ps->l-1 );
-		printf("\nProcessus : %d | Message lu : '%s'\n", getpid() , ps->mes  );	
+		//printf("\nProcessus : %d | Message lu : '%s'\n", getpid() , ps->mes  );	
 
 	}
 
@@ -99,6 +100,7 @@ int main(void)
 	if ( pid == 0 ){
 
 		mfifo * fifo_enfant = mfifo_connect("TestBoucle",O_CREAT  ,0777,LEN);
+		printf("\n");
 		for ( int i = 0 ; i < 10 ; i ++ ){
 			//usleep(100) ;
 			char * message = "Test numero " ;
@@ -119,7 +121,7 @@ int main(void)
 		char * buffer = malloc(10);
 		for ( int i = 0 ; i < 5 ; i++ ){
 			mfifo_read(fifo_pere, buffer , 10 );
-			printf("\nProcessus Fils: %d | Message lu : '%s'\n", getpid() , buffer  );	
+			//printf("\nProcessus Fils: %d | Message lu : '%s'\n", getpid() , buffer  );	
 			usleep(7) ;
 		}
 
@@ -128,18 +130,18 @@ int main(void)
 	}
 	else {
 		usleep(100);
-		mfifo * fifo_pere = mfifo_connect("TestBoucle",O_CREAT ,0777,LEN);
+		mfifo * fifo_pere = mfifo_connect("TestBoucle",0 ,0777,LEN);
 		//printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_pere), fifo_pere->nom );
 		//printf("On va lire des buffer de taille 10.\n");
 		char * buffer = malloc(10);
 		for ( int i = 0 ; i < 5 ; i++ ){
 			mfifo_read(fifo_pere, buffer , 10 );
-			printf("\nProcessus Pere : %d | Message lu : '%s'\n", getpid() , buffer  );	
+			//printf("\nProcessus Pere : %d | Message lu : '%s'\n", getpid() , buffer  );	
 			usleep(10) ;
 		}
 
+		printf("\n\n");
 		mfifo * fifo_enfant = mfifo_connect("TestBoucle",0,0777,LEN);
-		
 		sleep(1);
 		mfifo_disconnect(fifo_enfant);
 		mfifo_disconnect(fifo_pere);
