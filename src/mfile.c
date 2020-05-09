@@ -364,6 +364,11 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 
 	if ( dispo == fifo->capacity){
 		printf("Read | Le fifo est vide. Rien a lire .\n");
+		if ( mfifo_unlock(fifo) == 0 ) // on debloque
+		{
+			printf("Le processus n°%d lache le verrou.\n" , fifo->pid);
+			fifo->pid = -1 ;
+		}
 		return 0 ;
 	}
 	memcpy(buf , &fifo->memory[0] , len) ;
