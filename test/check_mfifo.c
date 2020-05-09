@@ -21,7 +21,7 @@ START_TEST(test_mfifo_creation){
 	ck_assert_str_eq(fifo1->nom, nom1);
 	ck_assert_int_eq(fifo1->capacity,cap);
 	ck_assert_int_eq(fifo1->pid,-1);
-	ck_assert_int_eq(mfifo_free_memory(fifo1),fifo1->capacity);
+	ck_assert( fifo1->memory == NULL);
 
 
 	fifo1 = mfifo_connect(nom1, O_CREAT|O_EXCL, perm, cap);
