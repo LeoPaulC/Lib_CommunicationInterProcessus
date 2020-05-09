@@ -2,82 +2,96 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "mfile.h"
 
-#define LEN 200
+#define LEN 170
 
 int main(void)
 {
 	Init();
-	printf("------ Creation PUIS Connexion : -------\n");
+	//printf("------ Creation PUIS Connexion : -------\n");
 	
 	mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
-	char* buf = "Nous avons enfin un test concluant Chef :)" ;
-
-	message * m = malloc(sizeof(message) + strlen(buf)+1) ;
-
-	create_message(buf,m) ;
-
-	int r = mfifo_write(fifo,m,m->l+sizeof(message)+1);
-	printf("Main .. | Ecriture 1 memory : %s\n",&fifo->memory[0] );
-	printf("Main .. | Ecriture 1 memory : %s\n",&fifo->memory[8] );
-
-	printf("\nTest d'une seconde ecriture pour evrifier que le processus attends bien de la place.\n\n");
-
-
-	char* b = "Et voici un deuxieme test , pour le plaisir des yeux !" ;
-
-	message * ms = malloc(sizeof(message) + strlen(b)+1) ;
-
-	create_message(b,ms) ;
-
-	int rbis = mfifo_write(fifo,ms,ms->l+sizeof(message)+1);
 	
-
-	buf = malloc(m->l+sizeof(message)+1) ;
-	printf("Main | Nous vidons bien le Buff pour etre sur de nos test : \nMain | Buf : %s \n", buf  );
-
-// Len definie temporairement pour nos test
-
-	size_t resRead = mfifo_read_message(fifo, buf, 0 ) ; // la taille n'importeplus grace au systeme de message
-
-	printf("Main | A la sortie de la Lecture de Message nous avons : %s \n", &buf[0] );
-	printf("Main | et le contenue de fifo est maintenant : \n> " );
-	print_fifo_memory(fifo) ;
-	printf("Main | Au Retour du Read , Buf : %s \n" , buf );
-	
+	char *s="Nous avons enfin un Test.";
 	int status = 0 ;
-	
 	pid_t pid = fork();
 
 	if ( pid == 0 ) {
-
-		printf("\n\n----------Fils -------------- \n");
+		//printf("\n\n----------Fils1 -------------- \n");
 		mfifo * fifo_enfant = mfifo_connect("testBis",0,0777,LEN);
 		
+		size_t lon = strlen(s);
+		size_t long_tot = sizeof(message) + lon + 1;
+		message *m = malloc(long_tot);
+		m->l = lon + 1;
+		memmove(m->mes, s, m->l) ;
+		//printf("Len buf %d + en-tete : %d \n",  strlen(s), 8 + strlen(s));
+		mfifo_write(fifo_enfant, m, long_tot);
+		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
+		sleep(1);
 
-		/*const char * buff = "20 testEcritureDepuisUnWrite" ;
-		int res = mfifo_write(fifo_enfant, buff, strlen(buff));
-		//int res = write(fd,"testEcritureDepuisUnWrite",strlen("testEcritureDepuisUnWrite"));
-    	printf("Res du Write dans Fils : len %d , content : %s \n", res , buff );
+		char * bufTest = "Deuxieme Test de message !" ;
+		mfifo_write(fifo_enfant, bufTest , strlen(bufTest));
+		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
+		
+		bufTest = "Un troisieme pour la route !" ;
+		mfifo_write(fifo_enfant, bufTest , strlen(bufTest));
+		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
+		
 
-		/*
-		int r = msync(&fifo_enfant->memory, sysconf(_SC_PAGESIZE) , MS_SYNC);
-		if ( r == -1 ) perror("Msync:");
-		printf("\nRetour de Msync : %d \n", r );
-		*/
-		return EXIT_SUCCESS ;
+		bufTest = "Quatrieme test avec un tryWrite pour voir." ;
+		mfifo_trywrite(fifo_enfant, bufTest , strlen(bufTest));
+		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
+		check_return_errno();
+		bufTest = "Ici nous allons essayer de mettre un texte trop long et donc tester le Errno." ;
+		mfifo_trywrite(fifo_enfant, bufTest , strlen(bufTest));
+		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
+		check_return_errno();
+		return 0 ;
+		
+
+		
 	}
 	else {
-		//sleep(2);
-		waitpid(pid , &status , 0);
-		printf("\n\n------------ Pere ---------------\n");
-		mfifo * fifo_pere= mfifo_connect("testBis",O_CREAT,0777,LEN);
+		//waitpid(pid,&status,0);
+		sleep(1);
+		//printf("------------------- Pere ---------------\n");
+		mfifo * fifo_pere= mfifo_connect("testBis",0,0777,LEN);
+		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_pere), fifo_pere->nom );
 		
-		mfifo_disconnect("testBis");
-		mfifo_unlink("testBis");
+		message *ps = malloc( sizeof( message) );
+		mfifo_read(fifo_pere, ps, sizeof(message));
+		ps = realloc( ps, ps->l + sizeof(message) );
+		//printf("On va lire un message de taille : %d \n", ps->l );
+		mfifo_read(fifo_pere, ps->mes , ps->l-1 );
+		printf("\nProcessus : %d | Message lu : '%s'\n", getpid() , ps->mes  );	
 
+		sleep(1) ; 
+
+		char * buf = malloc(30) ;
+		mfifo_read(fifo_pere, buf , 30 );
+		printf("\nProcessus : %d | Buffer[30] lu : '%s'\n",getpid() , buf  );	
+
+		sleep(1) ; 
+
+		buf = malloc(30) ;
+		mfifo_read(fifo_pere, buf , 30 );
+		printf("\nProcessus : %d | Buffer[30] lu : '%s'\n", getpid() , buf  );
+
+		buf = malloc(30) ;
+		mfifo_read(fifo_pere, buf , 30 );
+		printf("\nProcessus : %d | Buffer[30] lu : '%s'\n", getpid() , buf  );	
+
+
+		waitpid(pid,&status,0);
+		mfifo_unlink("testBis");
+		mfifo_disconnect(fifo);
+		
 	}
+	
+	
 	return EXIT_SUCCESS;
 }
 					

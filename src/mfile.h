@@ -4,16 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <semaphore.h>
-
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/mman.h>
-#include <sys/stat.h> /* Pour les constantes « mode » */
-#include <fcntl.h> /* Pour les constantes O_* */ 
-#include <semaphore.h> 
+#include <sys/stat.h>
 
 /* mfifo type : */
 
@@ -54,12 +51,11 @@ int mfifo_trylock(mfifo *fifo);
 size_t mfifo_capacity(mfifo *fifo);
 size_t mfifo_free_memory(mfifo *fifo);
 
-
-
-
 void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name);
 void init_memory_mfifo(mfifo * fifo);
 int free_mfifo(mfifo *fifo);
+void check_return_errno();
+void print_fifo_memory(mfifo * fifo );
 
 void create_message(char * buf, message * res);
 mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission);
