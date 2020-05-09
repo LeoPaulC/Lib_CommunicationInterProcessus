@@ -51,7 +51,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 			perror("O - mmap");
 			exit(1);
 		}
-		//printf("Creation fifo anonyme | adresse du fifo : %p\n",  res );
+		printf("Creation fifo anonyme | adresse du fifo : %p\n",  res );
 		fill_mfifo(res,(size_t) res , capacite, NULL);
 		//printf("Creation anonyme : capa = %d \n", res->capacity );
 	    return res ;
@@ -81,7 +81,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 					if( res == NULL){
 						res = connexion_mfifo_nomme(name, capacite, permission);
 						if( res == NULL ){
-							//printf("echec de conne\n");
+							//printf("echec de connexion\n");
 							return NULL;
 						}
 					}
@@ -111,7 +111,7 @@ mfifo * mfifo_connect( const char *nom, int options, mode_t permission, size_t c
 * Gère la connexion d'un mfifo nommé
 *
 */
-mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
+static mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 	mfifo * res = malloc(sizeof(mfifo)+capacite);
 	int fd = shm_open(name, O_RDWR, permission);
 	if( fd == -1 ){
@@ -135,7 +135,7 @@ mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission){
    	return res;
 }
 
-mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
+static mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 	//printf("Creation Fifo.\n");
 	mfifo * res = malloc(sizeof(mfifo)+capacite);
 	//printf("malloc\n");	
@@ -176,7 +176,7 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 * @param addr 		adresse de début de fifo
 * @param capacite 	capacité totale de fifo
 */
-void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
+static void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
 	
 	if(name == NULL){
 		fifo->nom = NULL;
@@ -200,7 +200,7 @@ void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
 *
 * @param fifo objet fifo dont il faut initialiser la memoire
 */
-void init_memory_mfifo(mfifo * fifo){
+static void init_memory_mfifo(mfifo * fifo){
 	memset(fifo->memory, 0, fifo->capacity);
 }
 
@@ -266,8 +266,8 @@ int mfifo_trywrite(mfifo *fifo, const void *val, size_t len){
 	}
 	printf("'\n");
 	if ( fifo->nom == NULL ){
-		int resu = msync(fifo, fifo->capacity, MS_SYNC); 
-		printf("Synchronisation memoire try_write : %d \n" , resu );
+		msync(fifo, fifo->capacity, MS_SYNC); 
+		//printf("Synchronisation memoire try_write : %d \n" , resu );
 	}
 	return 0;
 }
@@ -295,8 +295,8 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	printf("'\n\n");
 
 	if ( fifo->nom == NULL ){
-		int resu = msync(fifo, fifo->capacity, MS_SYNC); 
-		printf("Synchronisation memoire write : %d \n" , resu );
+		msync(fifo, fifo->capacity, MS_SYNC); 
+		//printf("Synchronisation memoire write : %d \n" , resu );
 	}
 	
 	return 0;
@@ -356,17 +356,19 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 		printf("\nLe verrou de lecture est detenu par le processus n° %d\n", fifo->pid );
 	} 
 	if ( fifo->nom == NULL ){
-		int resu = msync(fifo, fifo->capacity, MS_ASYNC); 
-		printf("Synchronisation memoire read : %d \n" , resu );
+		msync(fifo, fifo->capacity, MS_ASYNC); 
+		//printf("Synchronisation memoire read : %d \n" , resu );
 	}
 	size_t dispo  = mfifo_free_memory(fifo) ;
-	printf("Read : %ld \n", dispo );
+	//printf("Read : %ld \n", dispo );
+
 	if ( dispo == fifo->capacity){
 		printf("Read | Le fifo est vide. Rien a lire .\n");
 		return 0 ;
 	}
 	memcpy(buf , &fifo->memory[0] , len) ;
 	memmove(&fifo->memory[0] , &fifo->memory[len] , fifo->capacity ) ;
+
 	if ( mfifo_unlock(fifo) == 0 ) // on debloque
 	{
 		printf("Le processus n°%d lache le verrou.\n" , fifo->pid);
@@ -483,6 +485,7 @@ int mfifo_disconnect(mfifo *fifo){
 		perror("munmap ");
 		return -1;
 	}
+	printf("Deconnexion du fifo a l'adresse : %p \n", fifo );
 	return 0;
 }
 
@@ -498,6 +501,7 @@ int mfifo_unlink(const char * nom){
 	if( r == -1){
 		perror("shm unlink");
 	}
+	printf("Unlink du fifo : %s \n", nom );
 	return r;
 }
 
@@ -506,7 +510,7 @@ int mfifo_unlink(const char * nom){
 *
 * @param buf contenu du message à créer
 */
-void create_message(char * buf, message * res){
+static void create_message(char * buf, message * res){
 	int taille = sizeof(message)+strlen(buf)+1;
 	res = realloc(res,taille);
 	res->l = strlen(buf)+1;
