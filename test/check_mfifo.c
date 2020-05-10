@@ -1,5 +1,5 @@
+#include "../src/mfile.c"
 #include <check.h>
-#include "../src/mfile.h"
 
 #define nom1 "mfifoNommeUnitTest_1"
 #define nom2 "mfifoNommeUnitTest_2"

@@ -1,10 +1,10 @@
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall 
 LDFLAGS = $(CFLAGS)
 LDLIBS = -Wall $(shell pkg-config --libs check)
 
 all: check_mfifo
-check_fifo: check_mfifo.c check_mfifo.o ../src/mfile.o
+check_fifo: check_mfifo.o ../src/mfile.o 
 
 test: check_mfifo
 	./$< 
