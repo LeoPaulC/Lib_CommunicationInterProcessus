@@ -8,7 +8,7 @@
 #define cap 1500
 #define perm 0777
 #define msg1 "Ceci est un message de test d'écriture (numéro 1)."
-
+#define msg2 "Second test d'écriture"
 
 /**
  teste la creation d'un objet mfifo
@@ -93,15 +93,45 @@ START_TEST(test_mfifo_ecriture){
 	}
 
 	// test oracle
-	mfifo_write(fifo1, msg1, strlen(msg1));
+
+
+	int rs = mfifo_write(fifo1, msg1, cap +1 );
+	// buffer de taille supérieur à la capacité du fifo
+	ck_assert_int_eq(rs, -1);
+
+	rs = mfifo_write(fifo1, msg1, strlen(msg1));
+	// cas d'écriture qui est censé de fonctionner
+	ck_assert_int_eq(rs, 0);
+
 	ck_assert_int_eq(mfifo_free_memory(fifo1),
 	(mem_utilisee - strlen(msg1)) );
 
-	test_msg = strstr(fifo1->memory,msg1);
+	test_msg = strstr(fifo1->memory, msg1);
 	ck_assert_msg( test_msg != NULL,
 	"Le message écrit n'a pas été trouvé en mémoire");
 
+
+	/* test du try write */
+
+	rs = mfifo_trywrite(fifo1, msg2, cap +1);
+	// buffer de taille supérieur à la capacité du fifo
+	ck_assert_int_eq(rs, -1);
+
+	rs = mfifo_trywrite(fifo1, msg2, mfifo_free_memory(fifo1)+1);
+	// buffer de taille supérieur à la place libre dans le fifo
+	ck_assert_int_eq(rs, -1);
+
+	rs = mfifo_trywrite(fifo1, msg2, strlen(msg2));
+	// cas d'écriture qui est censé fonctionné
+	ck_assert_int_eq(rs, 0);
+	test_msg = strstr(fifo1->memory, msg2);
+	ck_assert_msg( test_msg != NULL,
+	"Le try write n'a pas réussi à écrire dans le fifo");
+
+
 	/* AJOUTER LES AUTRES TEST D ECRITURE*/
+
+
 }
 END_TEST
 
@@ -124,7 +154,14 @@ START_TEST(test_mfifo_lecture){
 	char * buf = malloc(sizeof(char)*strlen(msg1));
 
 	// test oracle
-	mfifo_read(fifo1, buf , strlen(msg1));
+	
+	int rs = mfifo_read(fifo1, buf, -1);
+	// cas de lecture avec nombre d'octet négatif
+	ck_assert_int_eq(rs,-1);
+
+	rs = mfifo_read(fifo1, buf, strlen(msg1));
+	// cas de lecture qui est censé fonctionner
+	ck_assert_int_eq(rs, strlen(msg1));
 	ck_assert_str_eq(buf,msg1);
 	ck_assert_int_eq(mfifo_free_memory(fifo1),
 	(mem_utilisee + strlen(msg1)) );
