@@ -1,7 +1,9 @@
 #include "../src/mfile.c"
 #include <check.h>
+#include <stdio.h>
 
 #define nom1 "mfifoNommeUnitTest_1"
+#define nom1_shm "/mfifoNommeUnitTest_1"
 #define nom2 "mfifoNommeUnitTest_2"
 #define cap 1500
 #define perm 0777
@@ -16,20 +18,22 @@ START_TEST(test_mfifo_creation){
 
 	// test oracle
 	fifo1 = mfifo_connect(nom1, O_CREAT|O_EXCL, perm, cap);
-	ck_assert_msg( fifo1 == NULL, "creation exclusive");
+	if( fifo1 == NULL){
+		ck_abort_msg("creation exclusive est nulle");
+	}
+	//ck_assert_msg( fifo1 != NULL, "la creation exclusive est nulle");
 	
-	ck_assert_str_eq(fifo1->nom, nom1);
+	ck_assert_str_eq(fifo1->nom, nom1_shm);
 	ck_assert_int_eq(fifo1->capacity,cap);
 	ck_assert_int_eq(fifo1->pid,-1);
-	ck_assert( fifo1->memory == NULL);
+	ck_assert_int_eq(strlen(fifo1->memory),0);
+	//ck_assert( fifo1->memory == NULL);
 
 
 	fifo1 = mfifo_connect(nom1, O_CREAT|O_EXCL, perm, cap);
-	ck_assert_msg( fifo1 != NULL,
-	"creation exclusive, valeur attendue : NULL,\nmais valeur trouvée: %p .",
-	fifo1);
-	
-	free_mfifo(fifo1);
+	if( fifo1 != NULL){
+		ck_abort_msg("creation exclusive, valeur attendue : NULL");
+	}
 }
 END_TEST
 
@@ -41,15 +45,16 @@ START_TEST(test_mfifo_connexion){
 	
 	// test oracle
 	fifo1 = mfifo_connect(nom1,O_CREAT,perm,cap);
-	ck_assert_msg( fifo1 == NULL, "connexion O_CREAT");
-	ck_assert_str_eq(fifo1->nom, nom1);
+	ck_assert_msg( fifo1 != NULL, "connexion O_CREAT");
+	ck_assert_str_eq(fifo1->nom, nom1_shm);
 	ck_assert_int_eq(fifo1->capacity,cap);
 
 
 	fifo1 = mfifo_connect(nom1,0,perm,cap);
-	ck_assert_msg( fifo1 == NULL, "connexion 0");
-	ck_assert_str_eq(fifo1->nom, nom1);
+	ck_assert_msg( fifo1 != NULL, "connexion 0");
+	ck_assert_str_eq(fifo1->nom, nom1_shm);
 	ck_assert_int_eq(fifo1->capacity,cap);
+	
 
 	fifo2 = NULL;
 	fifo2 = mfifo_connect(nom2,O_CREAT,perm,cap);
@@ -57,13 +62,17 @@ START_TEST(test_mfifo_connexion){
 	"connexion O_CREAT, valeur attendue : NULL,\nmais valeur trouvée: %p .",
 	fifo2);
 
-	fifo2 = NULL;
+
+	// on suppprime le fifo 2
+	mfifo_unlink(fifo2->nom);
+	mfifo_disconnect(fifo2);
+
+	// on test la connexion a un fifo inexistant 
 	fifo2 = mfifo_connect(nom2,0,perm,cap);
-	ck_assert_msg( fifo2 != NULL,
+	ck_assert_msg( fifo2 == NULL,
 	"connexion 0, valeur attendue : NULL,\nmais valeur trouvée: %p .",
 	fifo2);
 
-	free_mfifo(fifo1);
 }
 END_TEST
 
@@ -77,6 +86,7 @@ START_TEST(test_mfifo_ecriture){
 	if(fifo1 == NULL){
 		ck_abort_msg("La connexion a échoué dans le test d'ecriture ?!");
 	}
+
 	mem_utilisee = mfifo_free_memory(fifo1);
 	if( mem_utilisee < 0 || mem_utilisee > fifo1->capacity){
 		ck_abort_msg("la taille de la mémoire utilisée est incohérente");
@@ -85,11 +95,13 @@ START_TEST(test_mfifo_ecriture){
 	// test oracle
 	mfifo_write(fifo1, msg1, strlen(msg1));
 	ck_assert_int_eq(mfifo_free_memory(fifo1),
-	(mem_utilisee + strlen(msg1)) );
+	(mem_utilisee - strlen(msg1)) );
 
 	test_msg = strstr(fifo1->memory,msg1);
-	ck_assert_msg( test_msg == NULL,
+	ck_assert_msg( test_msg != NULL,
 	"Le message écrit n'a pas été trouvé en mémoire");
+
+	/* AJOUTER LES AUTRES TEST D ECRITURE*/
 }
 END_TEST
 
@@ -97,23 +109,25 @@ END_TEST
  teste la lecture d'un objet mfifo
 */
 START_TEST(test_mfifo_lecture){
-	mfifo * fifo1; char * buf;//setup
+	mfifo * fifo1;//setup
 
 	fifo1 = mfifo_connect(nom1, 0, perm, cap);
 	if(fifo1 == NULL){
 		ck_abort_msg("La connexion a échoué dans le test de lecture ?!");
 	}
+
 	int mem_utilisee = mfifo_free_memory(fifo1);
 	if( mem_utilisee < 0 || mem_utilisee > fifo1->capacity){
 		ck_abort_msg("la taille de la mémoire utilisée est incohérente");
 	}
-	buf = malloc(strlen(msg1));
+
+	char * buf = malloc(sizeof(char)*strlen(msg1));
 
 	// test oracle
-	mfifo_read(fifo1, buf , strlen(buf));
+	mfifo_read(fifo1, buf , strlen(msg1));
 	ck_assert_str_eq(buf,msg1);
 	ck_assert_int_eq(mfifo_free_memory(fifo1),
-	(mem_utilisee - strlen(msg1)) );
+	(mem_utilisee + strlen(msg1)) );
 }
 END_TEST
 
@@ -130,7 +144,7 @@ START_TEST(test_mfifo_suppression){
 	}
 
 	// test
-	ck_assert(mfifo_unlink(fifo1->nom) == -1);
+	ck_assert(mfifo_unlink(fifo1->nom) != -1);
 	ck_assert_int_eq(mfifo_disconnect(fifo1), 0);
 
 }
@@ -152,8 +166,8 @@ Suite * mfifo_nommee_suite(void){
 
 	Suite *s = suite_create("Mfifo_Nommee");
 	suite_add_tcase(s,tc_connect);
-	suite_add_tcase(s,tc_lecture);
 	suite_add_tcase(s,tc_ecriture);
+	suite_add_tcase(s,tc_lecture);
 	suite_add_tcase(s,tc_suppression);	
 
 	return s;
