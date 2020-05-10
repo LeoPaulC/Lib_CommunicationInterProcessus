@@ -25,6 +25,13 @@
      _a < _b ? _b : _a; })
 
 
+static void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name);
+static mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission);
+static mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission);
+static void init_memory_mfifo(mfifo * fifo);
+
+
+
 void Init(void)
 {
 	printf("Projet System 2020 , TRAORE - CADIOU :\n\n");
@@ -505,26 +512,6 @@ size_t mfifo_capacity(mfifo *fifo){
 	return fifo->capacity;
 }
 
-/*
-* Libere la mémoire allouer par l'objet fifo et ses diverses champs
-*
-* @param 	fifo ojbet mfifo dont l'on veut libérer la mémoire
-* @return 	renvoie la taille du fifo apres libération de mémoire
-*/
-int free_mfifo(mfifo *fifo){
-	if ( fifo == NULL ){
-		return -1 ;
-	}
-	free(&fifo->nom);
-	if( strlen(fifo->memory) !=0 ){
-		free(fifo->memory);
-	}
-	if(sem_destroy(&fifo->sem) == -1){
-		perror("destroy semaphore ");
-		return -1;
-	}
-	return sizeof(fifo);
-}
 
 /**
 * Renvoie la quantié de mémoire libre de l'objet mfifo
