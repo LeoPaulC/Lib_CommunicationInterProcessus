@@ -9,6 +9,8 @@
 #define perm 0777
 #define msg1 "Ceci est un message de test d'écriture (numéro 1)."
 #define msg2 "Second test d'écriture"
+#define msg3 "Troisieme test d'écriture"
+
 
 /**
  teste la creation d'un objet mfifo
@@ -131,7 +133,9 @@ START_TEST(test_mfifo_ecriture){
 
 	/* AJOUTER LES AUTRES TEST D ECRITURE*/
 
-
+	rs = mfifo_write_partial(fifo1, msg2, -1);
+	// buffer de taille négative
+	ck_assert_int_eq(rs, -1);
 }
 END_TEST
 
@@ -154,7 +158,7 @@ START_TEST(test_mfifo_lecture){
 	char * buf = malloc(sizeof(char)*strlen(msg1));
 
 	// test oracle
-	
+
 	int rs = mfifo_read(fifo1, buf, -1);
 	// cas de lecture avec nombre d'octet négatif
 	ck_assert_int_eq(rs,-1);
