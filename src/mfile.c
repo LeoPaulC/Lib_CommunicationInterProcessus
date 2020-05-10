@@ -208,26 +208,27 @@ void init_memory_mfifo(mfifo * fifo){
 */
 int mfifo_write_partial(mfifo *fifo, const void *val, size_t len){
 	//printf("Buf : %s | Len = %d \n", val , len  );
-	if ( len <= 0 ){
+	if ( (int)len <= 0 ){
 		printf("On quitte car on a ecrit tout le contenue de Val.\n");
 		return 0 ;
 	}
 	int dispo  = mfifo_free_memory(fifo) ;
-	printf("A l'entrée de la boucle , on a Dispo = %d \n",  dispo);
+	//printf("A l'entrée de la boucle , on a Dispo = %d \n",  dispo);
 	while ( dispo <= 0 ){
 		dispo  = mfifo_free_memory(fifo) ;
 	}
 
-	printf("On quitte la boucle Dispo car Dispo = %d \n", dispo );
+	//printf("On quitte la boucle Dispo car Dispo = %d \n", dispo );
 	char * tmp = malloc(dispo+1) ;
 	memcpy(tmp,val,dispo);
-	printf("Buf a ecrire : %s\n", tmp );
+	printf("Buf a ecrire sur '%ld' octets : %s\n", len , tmp );
 
 	int index = fifo->capacity - dispo ;
 
 	memcpy(&fifo->memory[index] , tmp , dispo) ;
 
-	memmove((void*)val , (void*)val+dispo , len-dispo ) ;
+	val = val+dispo ;
+
 	printf("Reste a ecrire : %s \n", (char*)val );
 
 	if ( sizeof(val) != 0 ){
@@ -302,7 +303,7 @@ int mfifo_trywrite(mfifo *fifo, const void *val, size_t len){
 	
 int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	// On test que LEN est bien < fifo->capacite .
-	if ( val == NULL || len <= 0 ){
+	if ( val == NULL || (int)len <= 0 ){
 		perror("Invalid arguments ( val or len )") ;
 		return -1;
 	}
@@ -386,7 +387,8 @@ void print_fifo_memory(mfifo * fifo ){
 *
 */
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
-	if ( len <= 0 ){
+
+	if ( (int)len <= 0 ){
 		perror("Invalid arguments ( len )") ;
 		return -1;
 	}

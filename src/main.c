@@ -68,7 +68,6 @@ int main(void)
 		message *m = malloc(long_tot);
 		m->l = lon + 1;
 		memmove(m->mes, s, m->l) ;
-		//printf("Len buf %d + en-tete : %d \n",  strlen(s), 8 + strlen(s));
 		mfifo_write(fifo_enfant, m, long_tot);
 
 		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
@@ -78,27 +77,18 @@ int main(void)
 	else {
 
 		waitpid(pid,&status,0);
-
 		mfifo * fifo_pere= mfifo_connect("testBis",0,0777,LEN);
 		printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_pere), fifo_pere->nom );
-		
 		message *ps = malloc( sizeof( message) );
 		mfifo_read(fifo_pere, ps, sizeof(message));
 		ps = realloc( ps, ps->l + sizeof(message) );
-		//printf("On va lire un message de taille : %d \n", ps->l );
 		mfifo_read(fifo_pere, ps->mes , ps->l-1 );
-		//printf("\nProcessus : %d | Message lu : '%s'\n", getpid() , ps->mes  );	
-
 	}
-
 	printf("\n------------------------------------------------------------------------------------");
 	printf("\n -- Voici une boucle d'ecriture et lecture de mfifo NOMME entre un pere et 2 fils -\n");
 	printf("------------------------------------------------------------------------------------\n\n");
-
 	pid = fork() ;
-
 	if ( pid == 0 ){
-
 		mfifo * fifo_enfant = mfifo_connect("TestBoucle",O_CREAT  ,0777,LEN);
 		printf("\n");
 		for ( int i = 0 ; i < 50 ; i ++ ){
@@ -115,13 +105,8 @@ int main(void)
 			//printf("Processus : %d | Il reste %ld places de libres dans le mfifo '%s'\n", getpid() , mfifo_free_memory(fifo_enfant), fifo_enfant->nom );
 		}
 		return 0 ;
-
-		
-
-	}
+}
 	else {
-		//waitpid(pid,&status,0) ;
-
 		pid = fork() ;
 
 		if ( pid == 0 ){
@@ -152,23 +137,18 @@ int main(void)
 			waitpid(pid,&status,0);
 			mfifo_disconnect(fifo_pere);
 		}
-
-
 		printf("\n\n");
 		sleep(1);
 		mfifo * fifo_enfant = mfifo_connect("TestBoucle",0,0777,LEN);
-		//wait(NULL);
 		mfifo_disconnect(fifo_enfant);
-		
 	}
 
 	printf("\n------------------------------------------------------------------------------------");
 	printf("\n -- Test d'ecriture et lecture de mfifo NOMME entre un pere et un fils ( TRY WRITE )-\n");
 	printf("------------------------------------------------------------------------------------\n\n");
-
+	
 	mfifo * test_trywrite = mfifo_connect("test_trywrite",O_CREAT,0777,20);
 	pid = fork() ;
-
 	if ( pid == 0 ){
 		char * buf = "Un test de TryWrite avec une longueur superieur a Len" ;
 		mfifo_trywrite(test_trywrite, buf, strlen(buf));
@@ -181,7 +161,6 @@ int main(void)
 		buf = "Deuxieme test" ;
 		mfifo_trywrite(test_trywrite, buf, strlen(buf));
 		check_return_errno();
-
 		return 0 ;
 	}
 	else {
@@ -190,16 +169,40 @@ int main(void)
 		mfifo_read(test_trywrite, buffer , 10 );
 	}
 
+	printf("\n------------------------------------------------------------------------------------");
+	printf("\n -- Test d'ecriture et lecture de mfifo NOMME entre un pere et un fils ( WRITE PARTIAL )-\n");
+	printf("------------------------------------------------------------------------------------\n\n");
 
-	
-	sleep(1);
+
+	mfifo * test_writepartial = mfifo_connect("test_writepartial",O_CREAT,0777,10);
+	pid = fork() ;
+
+	if ( pid == 0 ){
+		char * buf = "Un test de WritePartial avec une longueur superieur a Len" ;
+		mfifo_write_partial(test_writepartial, buf, strlen(buf));
+		check_return_errno();
+		sleep(1);
+		return 0 ;
+	}
+	else {
+		sleep(1);
+		printf("**On va essayer de lire des paquets de 10 octets pour liberer de la place au Write_Partial ** \n");
+		char * buffer = malloc(10);
+		for ( int i = 0 ; i < 6 ; i++ ){
+			mfifo_read(test_writepartial, buffer , 10 );
+			sleep(1);
+			buffer = malloc(10);
+		}
+	}	
+		
 	printf("\n\n");
-
 	mfifo_unlink("TestBoucle");
 	mfifo_unlink("testBis");
 	mfifo_disconnect(fifoNomme);
 	mfifo_unlink("test_trywrite");
 	mfifo_disconnect(test_trywrite);
+	mfifo_unlink("test_writepartial");
+	mfifo_disconnect(test_writepartial);
 	return EXIT_SUCCESS;
 }
 					
