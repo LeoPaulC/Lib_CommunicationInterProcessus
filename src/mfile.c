@@ -351,9 +351,10 @@ void print_fifo_memory(mfifo * fifo ){
 }
 
 ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
-	if ( mfifo_lock(fifo) == 0 ) {
-		fifo->pid = getpid() ;
-		printf("\nLe verrou de lecture est detenu par le processus n° %d\n", fifo->pid );
+
+	if ( mfifo_lock(fifo) == -1 ) {
+		printf("Verrou inaccessible.\n");
+		return -1 ;
 	} 
 	if ( fifo->nom == NULL ){
 		msync(fifo, fifo->capacity, MS_ASYNC); 
@@ -377,7 +378,6 @@ ssize_t mfifo_read(mfifo *fifo, void *buf, size_t len){
 
 	if ( mfifo_unlock(fifo) == 0 ) // on debloque
 	{
-		printf("Le processus n°%d lache le verrou.\n" , fifo->pid);
 		fifo->pid = -1 ;
 	}
 
@@ -399,6 +399,8 @@ int mfifo_lock(mfifo *fifo){
 		perror("sem wait ");
 		return -1;
 	}
+	fifo->pid = getpid() ;
+	printf("\nLe verrou de lecture est detenu par le processus n° %d\n", fifo->pid );
 	return 0;
 }
 
@@ -427,6 +429,7 @@ int mfifo_unlock(mfifo *fifo){
 		perror("sem post  ");
 		return -1;
 	}
+	printf("Le processus n°%d lache le verrou.\n" , fifo->pid);
 	return 0;
 }
 
