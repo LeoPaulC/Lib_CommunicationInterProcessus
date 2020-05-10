@@ -4,36 +4,40 @@
 
 Dans le cadre du cours de Système avancé de ce semestre, nous avons réaliser le projet répondant au sujet : [Enoncé du Projet](https://moodlesupd.script.univ-paris-diderot.fr/pluginfile.php/1100882/mod_resource/content/3/projet2020_ver3.pdf) 
 
-Le but du projet est d’implémenter un système de communication entre des processus qui permet deux types de communication :
+Le but du projet est d’implémenter un système de communication inter-processus qui permet deux types de communications :
 - une communication similaire à celle par tube (pipe ou fifo),
 - et une communication par messages.
 Les données seront traitées selon l’algorithme fifo : les octets sont lus dans un mfifo dans l’ordre d’écriture, et la lecture supprime automatiquement les octets lus.
 
-Le répertoire git contient deux dossiers : **src/** et **test/** .
+Le répertoire Git de ce projet contient deux dossiers : **src/** et **test/** .
 Le dossier src contient le code correspondant à la **bibliothèque mfifo**  devant être produite pour répondre au sujet du projet. D'un autre côté, le dossier test contient les testes unitaires liés aux fonctions de la bibliothèque mfifo.  Au total le repertoire Git contient deux fichiers Makefile, un pour pour chacun des deux dossiers évoqués précédement.
 
-Nous avons ecrit un programme principal qui permet de visualiser l'ensemble des fonctionnalitées du projet.
+Nous avons écrit un programme principal qui permet de visualiser l'ensemble des fonctionnalitées du projet.
 Pour le lancer il faut se placer dans **/src** et ensuite entrer les commandes suivantes :
 ```bash
 	make
 	./mfile
 ```
-Ce main reprend point par point les fonctions d'ecriture et de lecture entre divers processus , nous avons essayé de produire un affichage permettant de séparer les parties.
+Ce main reprend point par point les fonctions d'écriture et de lecture entre divers processus, nous avons essayé de produire un affichage permettant de séparer les parties.
 En resumé :
+
 ```bash
 Partie 1 : Ecriture / Lecture dans un mfifo anonyme entre 2 processus.
 		( la structure Message a été utilisé ici )
+		
 Partie 2 : Ecriture / Lecture dans un mfifo nommé entre 2 processus.
 		( Un buffer été utilisé utlisé ici )
-Partie 3 : Une boucle d'écriture ( répété 50 fois ) ainsi qu'une lecture effectué par deux processus differents ( une boucle de lecture pour chaque processus ) .
-		De maniere a mettre en evidence l'usage de nos verrous , et le fait que l'ecriture ne gene en rien la lecture.
-Partie 4 : Essaie d'écriture ( avec Try_write ) , suivie de plusieurs lecture pour mettre en évidence le fonctionnement de Trywrite().
-Partie 5 : Essaie d'écriture ( avec Write_partial) , suivie de plusieurs lecture pour mettre en évidence le fonctionnement de Write_partial().
+		
+Partie 3 : Une boucle d'écriture ( répété 50 fois ) ainsi qu'une lecture effectué par deux processus differents ( une boucle de lecture pour chaque processus ), de maniere à mettre en évidence l'usage de nos verrous , et le fait que l'écriture ne gène en rien la lecture.
+		
+Partie 4 : Essaie d'écriture ( avec Try_write ) , suivie de plusieurs lectures pour mettre en évidence le fonctionnement de Trywrite().
+
+Partie 5 : Essaie d'écriture ( avec Write_partial) , suivie de plusieurs lectures pour mettre en évidence le fonctionnement de Write_partial().
 
 ```
 
 
-Pour lancer la série de testes unitaires, se placer dans **test/** et ensuite il suffit d'utiliser les commandes :
+Pour lancer la série de testes unitaires, se placer dans **test/** et ensuite il suffit d'utiliser les commandes:
 ```bash
 	make
 	make test
@@ -84,21 +88,21 @@ mfifo * mfifo_connect( const char * nom , int options , mode_t permission , size
 
 La fonction **mfifo_connect**() permet la connexion et/ou la creation d'un mfifo en memoire, suivant l'option choisie. 
 
- - **0** :  demande la connexion au mfifo nommé avec le nom "nom" avec les permissions et la capacité passés en arguments.
-Dans ce cas un appel à mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission) est réalisé.
+ - **0** :  demande la connexion au mfifo nommé avec le nom **nom** avec les **permissions** et la **capacité** passés en arguments.
+Dans ce cas un appel à **connexion_mfifo_nomme**() est réalisé.
 
-- **O_CREAT** : demande la creation puis la connexion au mfifo nommé avec le nom "nom" avec les permissions et la capacité passés en arguments.
-Dans le cas ou mfifo existe deja n appel à mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission) est réalisé.
-Dans le cas ou mfifo n'existe pas cas un appel à mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission) est réalisé.
+- **O_CREAT** : demande la création puis la connexion au mfifo nommé avec le nom **nom** avec les **permissions** et la **capacité** passés en arguments.
+Dans le cas ou mfifo existe déjà un appel à **connexion_mfifo_nomme**() est réalisé.
+Dans le cas ou mfifo n'existe pas cas un appel à **creation_mfifo_nomme**() est réalisé.
         
-- **O_CREAT|O_EXCL** : demande la creation puis la connexion au mfifo nommé ( seulement s'il n'existe pas ) avec le nom "nom" avec les permissions et la capacité passés en arguments.
-Dans ce cas un appel à mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission) est réalisé.
+- **O_CREAT|O_EXCL** : demande la creation puis la connexion au mfifo nommé, seulement s'il n'existe pas, avec le nom **nom** avec les **permissions** et la **capacité** passés en arguments.
+Dans ce cas un appel à **creation_mfifo_nomme**() est réalisé.
         
-Dans le cas ou nom est egal a NULL , un mfifo anonyme est créé , avec les permissions et la capacité souhaitées.
+Dans le cas ou nom est égal a **NULL** , un mfifo anonyme est créé , avec les permissions et la capacité souhaitées.
 
 **RETURN**
 
-Renvoie l'adresse du mfifo si OK,NULL sinon.
+Renvoie l'adresse du mfifo si OK, NULL sinon.
    
 -----------------------------------------------------------------------------------------------
 
@@ -114,8 +118,7 @@ int mfifo_disconnect(mfifo *fifo);
 
 **DESCRIPTION**
 
-Permet de déconnecter le processus de l’objet mfifo (l’objet n’est pas détruit, mais fifo devient
-inutilisable).
+Permet de déconnecter le processus de l’objet mfifo (l’objet n’est pas détruit, mais fifo devient inutilisable).
 
 **RETURN**
 
@@ -155,9 +158,7 @@ int mfifo_write(mfifo *fifo, const void *buf, size_t len);
 
 **DESCRIPTION**
 
- Permet de bloquer le processus appelant jusqu’à ce que len octets soient écrits dans
-fifo. 
-Cette fonction est bloquant tant que les len octets n'ont pas été ecrit.
+Permet d'écrire les **len** premiers octets du contentu d'un message dans la mémoire d'un mfifo. Cette fonction est bloquante tant que les **len** octets n'ont pas fini d'être écrit. 
 
 **RETURN**
 
@@ -181,7 +182,7 @@ int mfifo_trywrite(mfifo *fifo, const void *buf, size_t len);
 
 **RETURN**
 
-Retourne : 0 si OK et −1 en cas d’erreur
+Retourne 0 si OK et −1 en cas d’erreur
 Cas sepcifique : s’il n’y a pas assez de place pour écrire len octets, mfifo_trywrite() retourne immédiatement −1 et met errno à la valeur EAGAIN
 
 -----------------------------------------------------------------------------------------------
@@ -198,13 +199,14 @@ int mfifo_write_partial(mfifo *fifo, const void *buf, size_t len);
 
 **DESCRIPTION**
 
-Permet d'écrire len octets dans fifo mais pas forcément de façon continue.
-mfifo_write_partial ecrit le nombre d'octets maximum possible dans le fifo jusqu'a attendre la disponibilité maximal.
-Si un seul appel a mfifo_write_partial ne suffit pas a écrire l'ensemble des octets voulus , d'autre appels a mfifo_write_partial seront effectués jusqu'a avoir ecris l'entiereté du message souhaité.
+Permet d'écrire **len** octets dans l'objet mfifo mais pas forcément de façon continue.
+**mfifo_write_partial**() écrit le nombre d'octets maximum possible dans le fifo jusqu'à atteindre la disponibilité maximal.
+Si un seul appel à **mfifo_write_partial**() ne suffit pas à écrire l'ensemble des octets voulus, d'autres appels à **mfifo_write_partial**() seront effectués jusqu'à avoir écrit l'entièreté du message souhaité.
 
 **RETURN**
 
 Retourne 0 si OK, −1 si échec .
+
 -----------------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------------
@@ -317,7 +319,6 @@ Retourne le quantité de places disponibles dans le mfifo.
 #### Fonctions Annexes :
 
 
-
 **mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission);**
 
 - Permet la creation d'un mfifo avec son shm associé portant le nom "nom" et les permissions et capcité souahitées.
@@ -327,7 +328,7 @@ Retourne le quantité de places disponibles dans le mfifo.
 
 **mfifo * connexion_mfifo_nomme(char * name, size_t capacite, mode_t permission);**
 
-- Permet la connexion d'un mfifo avec son shm associé portant le nom "nom" et les permissions et capacité souahitées.
+- Permet la connexion d'un mfifo avec sa Shared Memory associée portant le nom **nom** et les permissions et capacité souahitées.
 - Retourne :
 	l'adresse du mfifo si OK
 	NULL sinon
@@ -338,11 +339,11 @@ Retourne le quantité de places disponibles dans le mfifo.
 
 **void init_memory_mfifo(mfifo * fifo);**
 
-- Permet d'initialiser la memoire d'un mfifo a 0 sur capacity octets.
+- Permet d'initialiser la memoire d'un mfifo à 0 sur **fifo->capacity** octets.
 
 **int free_mfifo(mfifo *fifo);**
 
-- Permet de liberer l'espace memoire associé au mfifo.
+- Permet de libérer l'espace mémoire associé au mfifo.
 
 **void check_return_errno();**
 
@@ -350,10 +351,10 @@ Retourne le quantité de places disponibles dans le mfifo.
 
 **void print_fifo_memory(mfifo * fifo );**
 
-- Permet d'afficher le contenu en memoire du mfifo ( mfifo->memory ).
+- Permet d'afficher le contenu en mémoire du mfifo ( mfifo->memory ).
 
 **void create_message(char * buf, message * res);**
 
-- Permet de creer une structure message contenant le contenue de buf.
+- Permet de créer une structure message contenant le contenue de buf.
 
 
