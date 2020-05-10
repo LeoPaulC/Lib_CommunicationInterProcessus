@@ -167,8 +167,8 @@ int main(void)
 	printf("\n\n");
 
 	mfifo_unlink("TestBoucle");
-	mfifo_unlink("testBis");
 	mfifo_disconnect(fifoNomme);
+	mfifo_unlink("testBis");
 	return EXIT_SUCCESS;
 }
 					
