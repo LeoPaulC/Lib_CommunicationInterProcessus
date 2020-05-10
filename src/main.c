@@ -11,9 +11,6 @@ int main(void)
 {
 	Init();
 	printf("Nous allons travailler avec des mfifo de taille : %d\n", LEN );
-	//printf("------ Creation PUIS Connexion : -------\n");
-	
-	//mfifo * fifo = mfifo_connect("testBis",O_CREAT,0777,LEN);
 
 	mfifo * fifoAnonyme = mfifo_connect(NULL,O_CREAT,0777,LEN);
 
@@ -195,12 +192,10 @@ int main(void)
 		}
 	}	
 
-	char * buf = "Un test de WritePartial avec une longueur superieur a Len" ;
-		mfifo_write_partial(test_writepartial, buf, -3 );
 
 	
 	
-	printf("\n\n");
+	printf("\n");
 	mfifo_unlink("TestBoucle");
 	mfifo_unlink("testBis");
 	mfifo_disconnect(fifoNomme);
