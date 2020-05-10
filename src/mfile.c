@@ -208,7 +208,11 @@ void init_memory_mfifo(mfifo * fifo){
 */
 int mfifo_write_partial(mfifo *fifo, const void *val, size_t len){
 	//printf("Buf : %s | Len = %d \n", val , len  );
-	if ( (int)len <= 0 ){
+	if ( (int)len < 0 ){
+		printf("On quitte car Len negative.\n");
+		return -1 ;
+	}
+	else if ( (int)len == 0 ){
 		printf("On quitte car on a ecrit tout le contenue de Val.\n");
 		return 0 ;
 	}
@@ -232,7 +236,13 @@ int mfifo_write_partial(mfifo *fifo, const void *val, size_t len){
 	printf("Reste a ecrire : %s \n", (char*)val );
 
 	if ( sizeof(val) != 0 ){
-		mfifo_write_partial(fifo,val,len-dispo) ;
+		if ( (int)(len - dispo )< 0){
+			len = 0 ;
+		}
+		else {
+			len = len - dispo ;
+		}
+		mfifo_write_partial(fifo,val,len) ;
 	}
 	return 0;
 }

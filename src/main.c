@@ -194,7 +194,12 @@ int main(void)
 			buffer = malloc(10);
 		}
 	}	
-		
+
+	char * buf = "Un test de WritePartial avec une longueur superieur a Len" ;
+		mfifo_write_partial(test_writepartial, buf, -3 );
+
+	
+	
 	printf("\n\n");
 	mfifo_unlink("TestBoucle");
 	mfifo_unlink("testBis");
