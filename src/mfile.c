@@ -324,7 +324,7 @@ int mfifo_write(mfifo *fifo, const void *val, size_t len){
 	for ( int i = index ; i < (int)(index+len) ; i++ ){
 		printf("%c", fifo->memory[i]);
 	}
-	printf("'\n\n");
+	printf("'\n");
 
 	if ( fifo->nom == NULL ){
 		msync(fifo, fifo->capacity, MS_SYNC); 
