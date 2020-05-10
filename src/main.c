@@ -90,7 +90,7 @@ int main(void)
 		printf("\n");
 		for ( int i = 0 ; i < 50 ; i ++ ){
 			usleep(2) ;
-			char * message = "Test numero " ;
+			char * message = "Test numero ";
 			char * b = malloc(2);
 			//printf("Mess : %s \n" , message);
 			sprintf(b , "%d" , i) ;

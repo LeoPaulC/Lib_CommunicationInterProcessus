@@ -4,22 +4,42 @@
 
 Dans le cadre du cours de Système avancé de ce semestre, nous avons réaliser le projet répondant au sujet : [Enoncé du Projet](https://moodlesupd.script.univ-paris-diderot.fr/pluginfile.php/1100882/mod_resource/content/3/projet2020_ver3.pdf) 
 
-// NEED TO FILL THE BLANK WALLAH
-(description generale+ desc librairie)
+Le but du projet est d’implémenter un système de communication entre des processus qui permet deux types de communication :
+- une communication similaire à celle par tube (pipe ou fifo),
+- et une communication par messages.
+Les données seront traitées selon l’algorithme fifo : les octets sont lus dans un mfifo dans l’ordre d’écriture, et la lecture supprime automatiquement les octets lus.
 
 Le répertoire git contient deux dossiers : **src/** et **test/** .
-Le dossier src contient le code correspondant à la **bibliothèque mfifo**  devant être produite pour répondre au sujet du projet. D'un autre côté, le dossier test contient les tests unitaires liés aux fonctions de la bibliothèque mfifo.  Au total le repertoire Git contient deux fichiers Makefile, un pour pour chacun des deux dossiers évoqués précédement.
+Le dossier src contient le code correspondant à la **bibliothèque mfifo**  devant être produite pour répondre au sujet du projet. D'un autre côté, le dossier test contient les testes unitaires liés aux fonctions de la bibliothèque mfifo.  Au total le repertoire Git contient deux fichiers Makefile, un pour pour chacun des deux dossiers évoqués précédement.
 
-// NEED TO FILL THE BLANK AGAIN 
-(src + main)
+Nous avons ecrit un programme principal qui permet de visualiser l'ensemble des fonctionnalitées du projet.
+Pour le lancer il faut se placer dans **/src** et ensuite entrer les commandes suivantes :
+```bash
+	make
+	./mfile
+```
+Ce main reprend point par point les fonctions d'ecriture et de lecture entre divers processus , nous avons essayé de produire un affichage permettant de séparer les parties.
+En resumé :
+```bash
+Partie 1 : Ecriture / Lecture dans un mfifo anonyme entre 2 processus.
+		( la structure Message a été utilisé ici )
+Partie 2 : Ecriture / Lecture dans un mfifo nommé entre 2 processus.
+		( Un buffer été utilisé utlisé ici )
+Partie 3 : Une boucle d'écriture ( répété 50 fois ) ainsi qu'une lecture effectué par deux processus differents ( une boucle de lecture pour chaque processus ) .
+		De maniere a mettre en evidence l'usage de nos verrous , et le fait que l'ecriture ne gene en rien la lecture.
+Partie 4 : Essaie d'écriture ( avec Try_write ) , suivie de plusieurs lecture pour mettre en évidence le fonctionnement de Trywrite().
+Partie 5 : Essaie d'écriture ( avec Write_partial) , suivie de plusieurs lecture pour mettre en évidence le fonctionnement de Write_partial().
 
-Pour lancer la série de tests unitaires, il suffit d'utiliser les commandes :
+```
+
+
+Pour lancer la série de testes unitaires, se placer dans **test/** et ensuite il suffit d'utiliser les commandes :
 ```bash
 	make
 	make test
 ```
-Ensuite vérifier que 100%  des tests effectués se sont bien dérouler.
-Les tests concernent uniquement les fonctions de la **bibliothèque mfifo** demandé dans le sujet, vérifiant ainsi certains cas où les fonctionnalités sont censées échouer mais aussi les cas valide d'utilisation.
+Ensuite vérifier que 100%  des testes effectués se sont bien dérouler.
+Les testes concernent uniquement les fonctions de la **bibliothèque mfifo** demandé dans le sujet, vérifiant ainsi certains cas où les fonctionnalités sont censées échouer mais aussi les cas valide d'utilisation.
 
 
 ## Description du code (Manuel):
@@ -168,9 +188,23 @@ Cas sepcifique : s’il n’y a pas assez de place pour écrire len octets, mfif
 
 -----------------------------------------------------------------------------------------------
 
-**int mfifo_write_partial(mfifo *fifo, const void *buf, size_t len);**
-// NEED TO FILL THE BLANK WALLLAAAAAHRRHRHRH
+**NAME**
 
+mfifo_write_partial
+
+**SYNOPSIS**
+
+int mfifo_write_partial(mfifo *fifo, const void *buf, size_t len);
+
+**DESCRIPTION**
+
+Permet d'écrire len octets dans fifo mais pas forcément de façon continue.
+mfifo_write_partial ecrit le nombre d'octets maximum possible dans le fifo jusqu'a attendre la disponibilité maximal.
+Si un seul appel a mfifo_write_partial ne suffit pas a écrire l'ensemble des octets voulus , d'autre appels a mfifo_write_partial seront effectués jusqu'a avoir ecris l'entiereté du message souhaité.
+
+**RETURN**
+
+Retourne 0 si OK, −1 si échec .
 -----------------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------------

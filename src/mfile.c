@@ -171,7 +171,7 @@ mfifo * creation_mfifo_nomme(char * name, size_t capacite, mode_t permission){
 * @param addr 		adresse de début de fifo
 * @param capacite 	capacité totale de fifo
 */
-void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
+static void fill_mfifo(mfifo * fifo, size_t addr, size_t capacite, char *name){
 	
 	if(name == NULL){
 		fifo->nom = NULL;
@@ -515,7 +515,6 @@ int free_mfifo(mfifo *fifo){
 	if ( fifo == NULL ){
 		return -1 ;
 	}
-	//printf("dans free mfifo\n");
 	free(&fifo->nom);
 	if( strlen(fifo->memory) !=0 ){
 		free(fifo->memory);
