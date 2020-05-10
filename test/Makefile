@@ -3,10 +3,10 @@ CFLAGS = -Wall
 LDFLAGS = $(CFLAGS)
 LDLIBS = -Wall $(shell pkg-config --libs check)
 
-all: check_fifo
+all: check_mfifo
 check_fifo: check_mfifo.c check_mfifo.o ../src/mfile.o
 
-test: check_fifo
+test: check_mfifo
 	./$< 
 
 clean:
