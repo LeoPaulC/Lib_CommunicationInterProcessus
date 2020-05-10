@@ -75,9 +75,9 @@ START_TEST(test_mfifo_ecriture){
 
 	fifo1 = mfifo_connect(nom1, O_CREAT, perm, cap);
 	if(fifo1 == NULL){
-		ck_abort_msg("La connexion a échoué dans le test d'ecriture ??!!");
+		ck_abort_msg("La connexion a échoué dans le test d'ecriture ?!");
 	}
-	int mem_utilisee = mfifo_free_memory(fifo1);
+	mem_utilisee = mfifo_free_memory(fifo1);
 	if( mem_utilisee < 0 || mem_utilisee > fifo1->capacity){
 		ck_abort_msg("la taille de la mémoire utilisée est incohérente");
 	}
@@ -87,7 +87,7 @@ START_TEST(test_mfifo_ecriture){
 	ck_assert_int_eq(mfifo_free_memory(fifo1),
 	(mem_utilisee + strlen(msg1)) );
 
-	test_msg = strstr(fifo->memory,msg1);
+	test_msg = strstr(fifo1->memory,msg1);
 	ck_assert_msg( test_msg == NULL,
 	"Le message écrit n'a pas été trouvé en mémoire");
 }
@@ -101,7 +101,7 @@ START_TEST(test_mfifo_lecture){
 
 	fifo1 = mfifo_connect(nom1, 0, perm, cap);
 	if(fifo1 == NULL){
-		ck_abort_msg("La connexion a échoué dans le test de lecture ??!!");
+		ck_abort_msg("La connexion a échoué dans le test de lecture ?!");
 	}
 	int mem_utilisee = mfifo_free_memory(fifo1);
 	if( mem_utilisee < 0 || mem_utilisee > fifo1->capacity){
@@ -126,11 +126,11 @@ START_TEST(test_mfifo_suppression){
 	fifo1 = mfifo_connect(nom1, O_CREAT, perm, cap);
 
 	if(fifo1 == NULL){
-		ck_abort_msg("La connexion a échoué dans le test de suppression ??!!");
+		ck_abort_msg("La connexion a échoué dans le test de suppression ?!");
 	}
 
 	// test
-	ck_assert(mfifo_unlink(fifo1) == -1);
+	ck_assert(mfifo_unlink(fifo1->nom) == -1);
 	ck_assert_int_eq(mfifo_disconnect(fifo1), 0);
 
 }
@@ -162,7 +162,6 @@ Suite * mfifo_nommee_suite(void){
 
 
 
-
 int main(int argc, char const *argv[]){
  	/* code */
 	Suite *s ;SRunner * sr;int failures;
@@ -171,7 +170,7 @@ int main(int argc, char const *argv[]){
 	sr = srunner_create(s);
 
 	srunner_run_all(sr,CK_VERBOSE);
-	failures = srunner_n_tests_failed(sr);
+	failures = srunner_ntests_failed(sr);
 	srunner_free(sr);
 
  	return (failures == 0) ? EXIT_SUCCESS :EXIT_FAILURE;;
